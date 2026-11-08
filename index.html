@@ -125,7 +125,7 @@
   <div class="view hidden" id="trafficView">
     <div class="toolbar">
       <span class="sub" id="trafficInfo">실시간 기준</span><span class="sp"></span>
-      <label style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="chkAuto" style="width:auto" checked> 10초 자동갱신</label>
+      <label style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="chkAuto" style="width:auto" checked> 자동갱신</label>
       <button class="small" id="btnClearTrail">항적 지우기</button>
     </div>
     <div id="acList"><div class="empty">조회 후 반경 내 ADS-B 항공기가 표시됩니다.</div></div>
@@ -321,8 +321,15 @@ function renderNotams() {
   $('nCnt').textContent = `(${list.length})`;
   $('notamWin').textContent = `${fmtKST(S.winStart)} ~ ${fmtKST(S.winEnd)} · ${S.notamSource}`;
   drawNotams(list);
+  if (!cfg.worker && !S.pastedNotams.length) {
+    $('notamList').innerHTML = `<div class="empty"><b>NOTAM 자동 조회가 아직 설정되지 않았습니다.</b><br><br>
+      지금은 중계 서버(FAA NOTAM 키)가 없어서 NOTAM을 자동으로 받아올 수 없습니다.<br>
+      AIM Korea 등에서 NOTAM 원문을 복사해 붙여넣으면 이 시간창·반경으로 걸러서 보여줍니다.<br><br>
+      <button class="primary" onclick="document.getElementById('btnPaste').click()">NOTAM 원문 붙여넣기</button></div>`;
+    return;
+  }
   if (!list.length) {
-    $('notamList').innerHTML = `<div class="empty">시간창·반경 안에 해당하는 NOTAM이 없습니다.${all.length ? `<br>(전체 ${all.length}건 중)` : cfg.worker ? '' : '<br>중계 서버를 설정하거나 NOTAM 원문을 붙여넣으세요.'}<br><br>공식 브리핑(AIM Korea·관할 관제기관)으로 반드시 재확인하세요.</div>`;
+    $('notamList').innerHTML =`<div class="empty">시간창·반경 안에 해당하는 NOTAM이 없습니다.${all.length ? `<br>(전체 ${all.length}건 중)` : cfg.worker ? '' : '<br>중계 서버를 설정하거나 NOTAM 원문을 붙여넣으세요.'}<br><br>공식 브리핑(AIM Korea·관할 관제기관)으로 반드시 재확인하세요.</div>`;
     return;
   }
   $('notamList').innerHTML = list.map(n => {
@@ -362,6 +369,46 @@ function normalizeReadsb(ac, src) {
   }));
 }
 
+/* 중계 서버 없이 브라우저에서 직접 호출 (CORS 허용 여부가 소스마다 달라 순서대로 시도, 성공한 소스를 기억) */
+async function fetchWithTimeout(u, ms) {
+  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), ms || 10000);
+  try { const r = await fetch(u, { signal: ac.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+function openSkyStates(j) {
+  return (j.states || []).filter(s => s[5] != null && s[6] != null).map(s => ({
+    hex: s[0], flight: (s[1] || '').trim(), reg: '', type: '', lat: s[6], lon: s[5], ground: !!s[8],
+    alt: s[8] ? 0 : (s[7] != null ? s[7] * 3.28084 : (s[13] != null ? s[13] * 3.28084 : null)),
+    gs: s[9] != null ? s[9] * 1.94384 : null, track: s[10], vr: s[11] != null ? s[11] * 196.85 : null,
+    squawk: s[14] || '', src: 'OpenSky'
+  }));
+}
+const DIRECT_SOURCES = [
+  ['adsb.lol', (la, lo, r) => fetchWithTimeout(`https://api.adsb.lol/v2/point/${la}/${lo}/${r}`).then(j => normalizeReadsb(j.ac, 'adsb.lol'))],
+  ['airplanes.live', (la, lo, r) => fetchWithTimeout(`https://api.airplanes.live/v2/point/${la}/${lo}/${r}`).then(j => normalizeReadsb(j.ac, 'airplanes.live'))],
+  ['adsb.fi', (la, lo, r) => fetchWithTimeout(`https://opendata.adsb.fi/api/v2/lat/${la}/lon/${lo}/dist/${r}`).then(j => normalizeReadsb(j.ac || j.aircraft, 'adsb.fi'))],
+  ['OpenSky', (la, lo, r) => {
+    const dLat = r / 60, dLon = r / (60 * Math.cos(la * Math.PI / 180));
+    return fetchWithTimeout(`https://opensky-network.org/api/states/all?lamin=${(la - dLat).toFixed(3)}&lamax=${(la + dLat).toFixed(3)}&lomin=${(lo - dLon).toFixed(3)}&lomax=${(lo + dLon).toFixed(3)}`).then(openSkyStates);
+  }]
+];
+async function fetchTrafficDirect(la, lo, r) {
+  const pref = store.get('directSrc', null);
+  const order = DIRECT_SOURCES.slice().sort((a, b) => (b[0] === pref) - (a[0] === pref));
+  const errs = [];
+  for (const [name, fn] of order) {
+    try {
+      const aircraft = await fn(+la.toFixed(4), +lo.toFixed(4), r);
+      store.set('directSrc', name);
+      return { aircraft, source: `${name} (직접)`, errors: errs };
+    } catch (e) {
+      errs.push(`${name}: ${e.name === 'AbortError' ? '시간초과' : (e.message === 'Failed to fetch' || e.message === 'Load failed') ? '브라우저 차단(CORS)' : e.message}`);
+    }
+  }
+  store.set('directSrc', null);
+  throw new Error('모든 공개 소스 실패 — ' + errs.join(', '));
+}
+
 async function fetchTraffic() {
   const [la, lo] = S.center;
   const r = Math.min(250, Math.max(1, Math.round(S.radiusNm)));
@@ -371,11 +418,7 @@ async function fetchTraffic() {
     if (!res.ok) throw new Error(`항적 서버 응답 ${res.status}`);
     j = await res.json();
   } else {
-    // 중계 서버가 없을 때: 공개 API 직접 호출 시도
-    const res = await fetch(`https://api.airplanes.live/v2/point/${la}/${lo}/${r}`);
-    if (!res.ok) throw new Error(`airplanes.live 응답 ${res.status}`);
-    const raw = await res.json();
-    j = { aircraft: normalizeReadsb(raw.ac, 'airplanes.live'), source: 'airplanes.live (직접)' };
+    j = await fetchTrafficDirect(la, lo, r);
   }
   const t = Date.now();
   S.lastTraffic = t;
@@ -396,6 +439,7 @@ async function fetchTraffic() {
     const tr = S.trails[k];
     if (t - tr[tr.length - 1][3] > 600e3) delete S.trails[k];
   }
+  S.trafficSrc = j.source || '';
   $('trafficInfo').textContent = `실시간 ${new Date(t).toLocaleTimeString('ko-KR')} · ${j.source || ''}`;
 }
 
@@ -427,7 +471,9 @@ async function trafficCycle() {
 }
 function restartTimer() {
   clearInterval(S.timer); S.timer = null;
-  if ($('chkAuto').checked && S.center) S.timer = setInterval(() => { if (!document.hidden) trafficCycle(); }, 10000);
+  // OpenSky 익명 사용은 하루 호출량 제한이 있어 30초 간격
+  const ms = /OpenSky/.test(S.trafficSrc || '') ? 30000 : 10000;
+  if ($('chkAuto').checked && S.center) S.timer = setInterval(() => { if (!document.hidden) trafficCycle(); }, ms);
 }
 
 /* ───────── 조회 ───────── */
