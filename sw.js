@@ -1,5 +1,5 @@
 // 앱 셸 캐시 (API 응답은 캐시하지 않음 — NOTAM 마지막 결과는 앱이 localStorage에 보관)
-const CACHE = 'notam-traffic-v2';
+const CACHE = 'notam-traffic-v3';
 const SHELL = [
   './', './index.html', './notam.js', './manifest.webmanifest', './icon.svg', './icon-180.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',

@@ -75,7 +75,7 @@
 <body>
 <header>
   <h1>✈︎ NOTAM · 항적</h1>
-  <button class="small" id="btnPaste">NOTAM 붙여넣기</button>
+  <button class="small" id="btnPaste">AIM NOTAM</button>
   <button class="small" id="btnSettings">⚙︎</button>
 </header>
 
@@ -136,12 +136,20 @@
 
 <dialog id="dlgPaste">
   <h3 style="margin-top:0">NOTAM 원문 붙여넣기</h3>
-  <p class="sub">AIM Korea(aim.koca.go.kr) 등에서 복사한 ICAO 형식 NOTAM을 여러 건 그대로 붙여넣으세요. 중계 서버 없이도 시간·지역 필터와 지도 표시가 됩니다.</p>
+  <ol class="sub" style="padding-left:18px;margin:0 0 8px">
+    <li><b>AIM Korea 열기</b> → NOTAM 조회에서 해당 FIR(RKRR)·비행장 NOTAM을 띄웁니다.</li>
+    <li>목록 전체를 선택·복사합니다(여러 건 한꺼번에).</li>
+    <li>이 앱으로 돌아와 <b>클립보드에서 적용</b>을 누르면 끝.</li>
+  </ol>
+  <div class="row">
+    <button id="btnAim">AIM Korea 열기 ↗</button>
+    <button class="primary" id="btnClip">클립보드에서 적용</button>
+  </div>
   <textarea id="pasteBox" rows="10" class="mono" placeholder="E1234/26 NOTAMN&#10;Q) RKRR/QRTCA/IV/BO/W/000/030/3701N12628E002&#10;A) RKRR B) 2611100000 C) 2611100900&#10;E) ..."></textarea>
   <div class="row" style="margin-top:8px;margin-bottom:0">
-    <button id="pasteClear">붙여넣은 것 비우기</button>
+    <button id="pasteClear">비우기</button>
     <button id="pasteClose">닫기</button>
-    <button class="primary" id="pasteApply">적용</button>
+    <button id="pasteApply">직접 수정 적용</button>
   </div>
 </dialog>
 
@@ -319,20 +327,25 @@ function renderNotams() {
     winStart: S.winStart, winEnd: S.winEnd, includeWide: $('chkWide').checked, locations: nearbyLocations()
   });
   $('nCnt').textContent = `(${list.length})`;
-  $('notamWin').textContent = `${fmtKST(S.winStart)} ~ ${fmtKST(S.winEnd)} · ${S.notamSource}`;
+  const pinfo = pastedInfo();
+  $('notamWin').innerHTML = `${fmtKST(S.winStart)} ~ ${fmtKST(S.winEnd)}${S.notamSource && S.notamSource !== '붙여넣기' ? ' · ' + esc(S.notamSource) : ''}${pinfo}`;
   drawNotams(list);
+  const quick = `<div class="row" style="justify-content:center;margin:10px 0 0">
+      <button onclick="openAim()">AIM Korea 열기 ↗</button>
+      <button class="primary" onclick="applyClipboard()">클립보드에서 적용</button></div>`;
   if (!cfg.worker && !S.pastedNotams.length) {
-    $('notamList').innerHTML = `<div class="empty"><b>NOTAM 자동 조회가 아직 설정되지 않았습니다.</b><br><br>
-      지금은 중계 서버(FAA NOTAM 키)가 없어서 NOTAM을 자동으로 받아올 수 없습니다.<br>
-      AIM Korea 등에서 NOTAM 원문을 복사해 붙여넣으면 이 시간창·반경으로 걸러서 보여줍니다.<br><br>
-      <button class="primary" onclick="document.getElementById('btnPaste').click()">NOTAM 원문 붙여넣기</button></div>`;
+    $('notamList').innerHTML = `<div class="empty"><b>NOTAM을 AIM Korea에서 가져오세요.</b><br><br>
+      ① AIM Korea 열기 → NOTAM 조회(RKRR·주변 비행장)<br>
+      ② 목록 전체 복사 → 이 앱으로 돌아오기<br>
+      ③ 클립보드에서 적용 → 이 시간창·반경으로 자동 필터·지도 표시${quick}</div>`;
     return;
   }
   if (!list.length) {
-    $('notamList').innerHTML =`<div class="empty">시간창·반경 안에 해당하는 NOTAM이 없습니다.${all.length ? `<br>(전체 ${all.length}건 중)` : cfg.worker ? '' : '<br>중계 서버를 설정하거나 NOTAM 원문을 붙여넣으세요.'}<br><br>공식 브리핑(AIM Korea·관할 관제기관)으로 반드시 재확인하세요.</div>`;
+    $('notamList').innerHTML =`<div class="empty">시간창·반경 안에 해당하는 NOTAM이 없습니다.${all.length ? `<br>(전체 ${all.length}건 중)` : ''}<br><br>공식 브리핑(AIM Korea·관할 관제기관)으로 반드시 재확인하세요.${quick}</div>`;
     return;
   }
-  $('notamList').innerHTML = list.map(n => {
+  $('notamList').innerHTML = `<div class="toolbar"><span class="sp"></span><button class="small" onclick="openAim()">AIM Korea ↗</button><button class="small" onclick="applyClipboard()">클립보드에서 갱신</button></div>`;
+  $('notamList').innerHTML += list.map(n => {
     const now = Date.now();
     const activeNow = (!n.start || n.start.getTime() <= now) && (!n.end || n.end.getTime() >= now);
     const cat = NOTAM.qCategory(n.qcode);
@@ -536,17 +549,57 @@ $('acList').onclick = e => {
   map.setView([a.lat, a.lon], Math.max(map.getZoom(), 10));
 };
 
+/* ───────── AIM Korea 붙여넣기 ───────── */
+const AIM_URL = 'https://aim.koca.go.kr/';
+function openAim() { window.open(AIM_URL, '_blank', 'noopener'); }
+
+function pastedInfo() {
+  const t = store.get('pastedAt', 0);
+  if (!S.pastedNotams.length || !t) return '';
+  const hrs = (Date.now() - t) / 3600e3;
+  const when = new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const style = hrs > 24 ? 'color:var(--bad)' : hrs > 6 ? 'color:var(--warn)' : '';
+  return ` · <span style="${style}">AIM 붙여넣기 ${S.pastedNotams.length}건 (${when}${hrs > 24 ? ', 24시간 경과 — 갱신 필요' : ''})</span>`;
+}
+
+/** 붙여넣은 원문을 저장·파싱하고 결과를 알려줌 */
+function applyPasted(txt) {
+  const parts = NOTAM.splitNotams(txt);
+  const parsed = parts.map(NOTAM.parseNotam);
+  const ok = parsed.filter(n => n.start || n.q).length;
+  if (!parsed.length) { setStatus('NOTAM 형식을 찾지 못했습니다. Q)·B)·E) 항목이 포함되게 복사했는지 확인하세요.', true); return false; }
+  store.set('pasted', txt); store.set('pastedAt', Date.now());
+  S.pastedNotams = parsed;
+  setStatus(`AIM Korea NOTAM ${parsed.length}건 인식${ok < parsed.length ? ` (시간·좌표 해석 불가 ${parsed.length - ok}건 — 원문 확인)` : ''}`, ok < parsed.length);
+  if (S.center && S.winStart) renderNotams();
+  else setStatus(`NOTAM ${parsed.length}건 저장됨 — 위치·시간을 정하고 조회를 누르세요.`);
+  return true;
+}
+
+async function applyClipboard() {
+  let txt = '';
+  try { txt = await navigator.clipboard.readText(); }
+  catch (e) {
+    // 클립보드 접근이 막힌 경우: 붙여넣기 창을 열어 길게 눌러 붙여넣도록 안내
+    $('pasteBox').value = '';
+    $('dlgPaste').showModal();
+    setStatus('클립보드 접근이 허용되지 않았습니다. 입력칸을 길게 눌러 붙여넣은 뒤 "직접 수정 적용"을 누르세요.', true);
+    return;
+  }
+  if (!txt.trim()) { setStatus('클립보드가 비어 있습니다. AIM Korea에서 NOTAM을 먼저 복사하세요.', true); return; }
+  $('pasteBox').value = txt;
+  if (applyPasted(txt) && $('dlgPaste').open) $('dlgPaste').close();
+}
+
 $('btnPaste').onclick = () => { $('pasteBox').value = store.get('pasted', ''); $('dlgPaste').showModal(); };
+$('btnAim').onclick = openAim;
+$('btnClip').onclick = applyClipboard;
 $('pasteClose').onclick = () => $('dlgPaste').close();
-$('pasteClear').onclick = () => { $('pasteBox').value = ''; };
-$('pasteApply').onclick = () => {
-  const txt = $('pasteBox').value;
-  store.set('pasted', txt);
-  S.pastedNotams = NOTAM.splitNotams(txt).map(NOTAM.parseNotam);
-  $('dlgPaste').close();
-  setStatus(`붙여넣은 NOTAM ${S.pastedNotams.length}건 인식`);
+$('pasteClear').onclick = () => {
+  $('pasteBox').value = ''; store.set('pasted', ''); store.set('pastedAt', 0); S.pastedNotams = [];
   if (S.center && S.winStart) renderNotams();
 };
+$('pasteApply').onclick = () => { if (applyPasted($('pasteBox').value)) $('dlgPaste').close(); };
 
 $('btnSettings').onclick = () => {
   $('setWorker').value = cfg.worker; $('setAlertNm').value = cfg.alertNm; $('setAlertFt').value = cfg.alertFt; $('setMaxFt').value = cfg.maxFt;

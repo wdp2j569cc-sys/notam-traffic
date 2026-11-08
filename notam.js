@@ -83,6 +83,13 @@
 
     const head = flat.match(/\b([A-Z]\d{4}\/\d{2})\s+(NOTAM[NRC])(?:\s+([A-Z]\d{4}\/\d{2}))?/);
     if (head) { n.id = head[1]; n.type = head[2]; n.refId = head[3] || null; }
+    else {
+      // 머리글 없이 번호만 있는 경우: Q) 앞부분에서 번호를 찾음
+      const pre = flat.split(/\bQ\)/)[0];
+      const idm = pre.match(/\b([A-Z]\d{4}\/\d{2})\b/);
+      if (idm) n.id = idm[1];
+      n.type = 'NOTAMN';
+    }
 
     // 항목 분리: " Q) ", " A) " ...
     const items = {};
@@ -149,6 +156,23 @@
     const re = /(?:^|\n|\s)\(?([A-Z]\d{4}\/\d{2})\s+NOTAM[NRC]/g;
     let m;
     while ((m = re.exec(t)) !== null) idxs.push(m.index + m[0].indexOf(m[1]));
+    // "NOTAMN" 머리글이 없는 형식(사이트 복사본 등): Q) 기준으로 나누되, 바로 앞 줄에 번호가 있으면 포함
+    const qCount = (t.match(/(?:^|\s)Q\)\s*[A-Z]{4}\//g) || []).length;
+    if (qCount > idxs.length) {
+      const qIdx = [];
+      const qre = /(?:^|\s)Q\)\s*[A-Z]{4}\//g;
+      while ((m = qre.exec(t)) !== null) {
+        let st = m.index + m[0].indexOf('Q)');
+        const lineStart = t.lastIndexOf('\n', st - 1) + 1;
+        const prevStart = t.lastIndexOf('\n', lineStart - 2) + 1;
+        const before = t.slice(lineStart, st);
+        const prevLine = t.slice(prevStart, Math.max(prevStart, lineStart - 1));
+        if (/[A-Z]\d{4}\/\d{2}/.test(before)) st = lineStart;
+        else if (/[A-Z]\d{4}\/\d{2}/.test(prevLine) && !/[BCE]\)/.test(prevLine)) st = prevStart;
+        qIdx.push(st);
+      }
+      return qIdx.map((s, i) => t.slice(s, i + 1 < qIdx.length ? qIdx[i + 1] : t.length).trim());
+    }
     if (idxs.length === 0) {
       return t.split(/\n\s*\n/).map(s => s.trim()).filter(s => /Q\)|E\)/.test(s));
     }
