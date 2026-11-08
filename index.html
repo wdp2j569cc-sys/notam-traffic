@@ -403,23 +403,31 @@ const DIRECT_SOURCES = [
   ['OpenSky', (la, lo, r) => {
     const dLat = r / 60, dLon = r / (60 * Math.cos(la * Math.PI / 180));
     return fetchWithTimeout(`https://opensky-network.org/api/states/all?lamin=${(la - dLat).toFixed(3)}&lamax=${(la + dLat).toFixed(3)}&lomin=${(lo - dLon).toFixed(3)}&lomax=${(lo + dLon).toFixed(3)}`).then(openSkyStates);
-  }]
+  }],
+  // 임시: 공개 CORS 중계(allorigins, 분당 약 20회 제한·가용성 보장 없음) 경유
+  ['airplanes.live via allorigins', (la, lo, r) => fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://api.airplanes.live/v2/point/${la}/${lo}/${r}`)}`, 15000).then(j => normalizeReadsb(j.ac, 'airplanes.live·공개중계'))],
+  ['adsb.lol via allorigins', (la, lo, r) => fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://api.adsb.lol/v2/point/${la}/${lo}/${r}`)}`, 15000).then(j => normalizeReadsb(j.ac, 'adsb.lol·공개중계'))]
 ];
+const blockedThisSession = new Set();
 async function fetchTrafficDirect(la, lo, r) {
   const pref = store.get('directSrc', null);
-  const order = DIRECT_SOURCES.slice().sort((a, b) => (b[0] === pref) - (a[0] === pref));
+  const order = DIRECT_SOURCES.filter(s => !blockedThisSession.has(s[0]))
+    .sort((a, b) => (b[0] === pref) - (a[0] === pref));
   const errs = [];
   for (const [name, fn] of order) {
     try {
       const aircraft = await fn(+la.toFixed(4), +lo.toFixed(4), r);
       store.set('directSrc', name);
-      return { aircraft, source: `${name} (직접)`, errors: errs };
+      return { aircraft, source: name, errors: errs };
     } catch (e) {
-      errs.push(`${name}: ${e.name === 'AbortError' ? '시간초과' : (e.message === 'Failed to fetch' || e.message === 'Load failed') ? '브라우저 차단(CORS)' : e.message}`);
+      const cors = e.message === 'Failed to fetch' || e.message === 'Load failed' || /NetworkError/.test(e.message);
+      if (cors) blockedThisSession.add(name); // 차단된 소스는 이번 실행 동안 다시 시도하지 않음
+      errs.push(`${name}: ${e.name === 'AbortError' ? '시간초과' : cors ? '브라우저 차단' : e.message}`);
     }
   }
   store.set('directSrc', null);
-  throw new Error('모든 공개 소스 실패 — ' + errs.join(', '));
+  if (!order.length) throw new Error('공개 소스가 모두 브라우저에서 차단됨 — ⚙︎ 설정에 중계 서버(Worker) URL을 넣어야 합니다.');
+  throw new Error('공개 소스 실패 — ' + errs.join(', ') + ' — ⚙︎ 설정에 중계 서버(Worker) URL을 넣으면 해결됩니다.');
 }
 
 async function fetchTraffic() {
@@ -480,7 +488,7 @@ function renderTraffic() {
 
 async function trafficCycle() {
   try { await fetchTraffic(); renderTraffic(); }
-  catch (e) { setStatus(`항적 조회 실패: ${e.message}${cfg.worker ? '' : ' — ⚙︎에서 중계 서버를 설정하세요.'}`, true); }
+  catch (e) { setStatus(`항적 조회 실패: ${e.message}`, true); }
 }
 function restartTimer() {
   clearInterval(S.timer); S.timer = null;
