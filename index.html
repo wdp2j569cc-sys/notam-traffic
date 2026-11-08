@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NOTAM·항적">
+<meta name="theme-color" content="#0f1419">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>NOTAM · 항적 확인</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #0f1419; --card: #182028; --line: #2a3540; --txt: #e6edf3; --sub: #8b98a5;
+    --acc: #3ea6ff; --warn: #ffb020; --bad: #ff5c5c; --ok: #3ccf7a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt);
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; }
+  body { display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+  header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+  header h1 { font-size: 17px; margin: 0; flex: 1; }
+  button { font: inherit; color: var(--txt); background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 12px; }
+  button.primary { background: var(--acc); border-color: var(--acc); color: #04121f; font-weight: 600; }
+  button.small { padding: 4px 8px; font-size: 13px; }
+  input, select, textarea { font: inherit; font-size: 16px; color: var(--txt); background: #0b1015;
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; width: 100%; }
+  label { font-size: 12px; color: var(--sub); display: block; margin-bottom: 2px; }
+  .panel { background: var(--card); margin: 0 10px 8px; border-radius: 12px; padding: 10px; border: 1px solid var(--line); }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .row > * { flex: 1; min-width: 0; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; margin-bottom: 8px; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 7px 4px; font-size: 14px; }
+  .seg button.on { background: var(--acc); color: #04121f; font-weight: 600; }
+  .hidden { display: none !important; }
+  .tabs { display: flex; margin: 0 10px; gap: 6px; }
+  .tabs button { flex: 1; border-radius: 10px 10px 0 0; border-bottom: 0; }
+  .tabs button.on { background: var(--acc); color: #04121f; font-weight: 600; }
+  main { flex: 1; min-height: 0; position: relative; margin: 0 10px calc(8px + env(safe-area-inset-bottom));
+    border: 1px solid var(--line); border-radius: 0 0 12px 12px; overflow: hidden; }
+  .view { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #map { background: #0b1015; }
+  .status { font-size: 12px; color: var(--sub); padding: 0 12px 6px; min-height: 18px; }
+  .status.err { color: var(--bad); }
+  .card { border-bottom: 1px solid var(--line); padding: 10px 12px; }
+  .card .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: #26313c; color: var(--sub); }
+  .tag.red { background: #4a1f22; color: #ffb3b3; } .tag.org { background: #4a3a14; color: #ffd98a; }
+  .tag.grn { background: #173a28; color: #9ff0c0; } .tag.blu { background: #12324d; color: #9fd3ff; }
+  .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; }
+  .sub { color: var(--sub); font-size: 12.5px; }
+  .empty { padding: 24px 16px; color: var(--sub); text-align: center; }
+  details summary { color: var(--acc); font-size: 13px; margin-top: 4px; }
+  .ac.alert { background: #2a1517; }
+  .ac-icon { width: 26px; height: 26px; }
+  #ctrlMini { display: none; align-items: center; gap: 8px; font-size: 14px; }
+  #ctrl.mini > :not(#ctrlMini) { display: none; }
+  #ctrl.mini #ctrlMini { display: flex; }
+  #ctrlMini span { flex: 1; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .legend { position: absolute; right: 8px; top: 8px; z-index: 500; background: rgba(15,20,25,.85);
+    border-radius: 8px; padding: 6px 8px; font-size: 11px; color: var(--sub); }
+  .toolbar { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); align-items: center; flex-wrap: wrap; }
+  .toolbar .sp { flex: 1; }
+  dialog { background: var(--card); color: var(--txt); border: 1px solid var(--line); border-radius: 14px;
+    width: min(94vw, 520px); padding: 14px; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  .leaflet-container { font: inherit; }
+  .leaflet-popup-content { font-size: 13px; }
+  #collapse { margin-left: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈︎ NOTAM · 항적</h1>
+  <button class="small" id="btnPaste">NOTAM 붙여넣기</button>
+  <button class="small" id="btnSettings">⚙︎</button>
+</header>
+
+<div class="panel" id="ctrl">
+  <div id="ctrlMini"><span id="miniTxt"></span><button class="small" id="btnRefresh">↻</button><button class="small" id="btnExpand">조건 변경</button></div>
+  <div class="seg" id="locMode">
+    <button data-m="icao" class="on">공항 코드</button>
+    <button data-m="coord">좌표</button>
+    <button data-m="gps">현재 위치</button>
+  </div>
+  <div class="row" id="rowIcao">
+    <div><label>ICAO 코드</label><input id="icao" list="apList" placeholder="예: RKTY" autocapitalize="characters" value="RKSI"></div>
+    <div style="flex:.6"><label>반경 (NM)</label><input id="radius1" type="number" inputmode="decimal" value="25"></div>
+  </div>
+  <div class="row hidden" id="rowCoord">
+    <div><label>위도 (°N)</label><input id="lat" type="number" inputmode="decimal" step="any" placeholder="36.6319"></div>
+    <div><label>경도 (°E)</label><input id="lon" type="number" inputmode="decimal" step="any" placeholder="128.3550"></div>
+    <div style="flex:.6"><label>반경 (NM)</label><input id="radius2" type="number" inputmode="decimal" value="25"></div>
+  </div>
+  <div class="row">
+    <div><label>시작 시각 (KST)</label><input id="tStart" type="datetime-local"></div>
+    <div style="flex:.45"><label>기간 (시간)</label><input id="tDur" type="number" inputmode="decimal" value="2" step="0.5"></div>
+  </div>
+  <div class="row" style="margin-bottom:0">
+    <button id="btnNow">지금</button>
+    <button class="primary" id="btnGo" style="flex:2">조회</button>
+  </div>
+</div>
+
+<div class="status" id="status"></div>
+
+<div class="tabs">
+  <button data-v="map" class="on">지도</button>
+  <button data-v="notam">NOTAM <span id="nCnt"></span></button>
+  <button data-v="traffic">항공기 <span id="aCnt"></span></button>
+</div>
+<main>
+  <div class="view" id="map"></div>
+  <div class="legend" id="legend">■ <span style="color:#ff5c5c">NOTAM 구역</span> · ▲ 항공기 · ○ 조회 반경</div>
+  <div class="view hidden" id="notamView">
+    <div class="toolbar">
+      <span class="sub" id="notamWin"></span><span class="sp"></span>
+      <label style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="chkWide" style="width:auto"> FIR 전역 포함</label>
+    </div>
+    <div id="notamList"><div class="empty">조회 버튼을 누르면 선택한 시간창에 유효한 NOTAM이 표시됩니다.</div></div>
+  </div>
+  <div class="view hidden" id="trafficView">
+    <div class="toolbar">
+      <span class="sub" id="trafficInfo">실시간 기준</span><span class="sp"></span>
+      <label style="display:flex;align-items:center;gap:4px;margin:0"><input type="checkbox" id="chkAuto" style="width:auto" checked> 10초 자동갱신</label>
+      <button class="small" id="btnClearTrail">항적 지우기</button>
+    </div>
+    <div id="acList"><div class="empty">조회 후 반경 내 ADS-B 항공기가 표시됩니다.</div></div>
+  </div>
+</main>
+
+<datalist id="apList"></datalist>
+
+<dialog id="dlgPaste">
+  <h3 style="margin-top:0">NOTAM 원문 붙여넣기</h3>
+  <p class="sub">AIM Korea(aim.koca.go.kr) 등에서 복사한 ICAO 형식 NOTAM을 여러 건 그대로 붙여넣으세요. 중계 서버 없이도 시간·지역 필터와 지도 표시가 됩니다.</p>
+  <textarea id="pasteBox" rows="10" class="mono" placeholder="E1234/26 NOTAMN&#10;Q) RKRR/QRTCA/IV/BO/W/000/030/3701N12628E002&#10;A) RKRR B) 2611100000 C) 2611100900&#10;E) ..."></textarea>
+  <div class="row" style="margin-top:8px;margin-bottom:0">
+    <button id="pasteClear">붙여넣은 것 비우기</button>
+    <button id="pasteClose">닫기</button>
+    <button class="primary" id="pasteApply">적용</button>
+  </div>
+</dialog>
+
+<dialog id="dlgSettings">
+  <h3 style="margin-top:0">설정</h3>
+  <label>중계 서버(Cloudflare Worker) URL</label>
+  <input id="setWorker" placeholder="https://notam-relay.xxxx.workers.dev" autocapitalize="off" autocorrect="off">
+  <p class="sub">비워 두면 NOTAM은 붙여넣기만, 항적은 공개 API 직접 호출을 시도합니다(브라우저 CORS 정책상 실패할 수 있음).</p>
+  <div class="row">
+    <div><label>근접 경보 거리 (NM)</label><input id="setAlertNm" type="number" inputmode="decimal" value="5"></div>
+    <div><label>근접 경보 고도 이하 (ft)</label><input id="setAlertFt" type="number" inputmode="decimal" value="5000"></div>
+  </div>
+  <div class="row">
+    <div><label>항공기 표시 상한 고도 (ft, 0=전부)</label><input id="setMaxFt" type="number" inputmode="decimal" value="0"></div>
+  </div>
+  <div class="row" style="margin-bottom:0">
+    <button id="setClose">닫기</button>
+    <button class="primary" id="setSave">저장</button>
+  </div>
+</dialog>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="notam.js"></script>
+<script>
+'use strict';
+/* ───────── 한국 비행장 좌표(근사값, 지도 중심용) ───────── */
+const AIRPORTS = {
+  RKSI: ['인천', 37.4691, 126.4505], RKSS: ['김포', 37.5583, 126.7906], RKPC: ['제주', 33.5113, 126.4930],
+  RKPK: ['김해', 35.1795, 128.9382], RKTN: ['대구', 35.8941, 128.6589], RKJJ: ['광주', 35.1264, 126.8089],
+  RKJB: ['무안', 34.9914, 126.3828], RKNY: ['양양', 38.0613, 128.6692], RKTU: ['청주', 36.7166, 127.4991],
+  RKNW: ['원주', 37.4383, 127.9604], RKPU: ['울산', 35.5935, 129.3518], RKJY: ['여수', 34.8423, 127.6169],
+  RKTH: ['포항', 35.9879, 129.4203], RKPS: ['사천', 35.0886, 128.0703], RKJK: ['군산', 35.9038, 126.6158],
+  RKSM: ['서울(성남)', 37.4458, 127.1139], RKSO: ['오산', 37.0906, 127.0297], RKSG: ['험프리스', 36.9617, 127.0311],
+  RKSW: ['수원', 37.2394, 127.0071], RKTY: ['예천', 36.6319, 128.3550], RKNN: ['강릉', 37.7536, 128.9439],
+  RKPD: ['정석', 33.3990, 126.7118], RKPE: ['진해', 35.1408, 128.6964], RKTI: ['중원', 36.9658, 127.8853]
+};
+const FIR = 'RKRR';
+
+/* ───────── 상태 ───────── */
+const S = {
+  mode: 'icao', center: null, radiusNm: 25, icao: null,
+  winStart: null, winEnd: null,
+  fetchedNotams: [], pastedNotams: [], notamSource: '',
+  aircraft: [], trails: {}, timer: null, lastTraffic: null
+};
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const cfg = Object.assign({ worker: '', alertNm: 5, alertFt: 5000, maxFt: 0 }, store.get('cfg', {}));
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+function fmtKST(d) {
+  if (!d) return '—';
+  const k = new Date(d.getTime() + 9 * 3600e3);
+  return `${k.getUTCMonth() + 1}/${k.getUTCDate()} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())} KST`;
+}
+function fmtUTC(d) {
+  if (!d) return '—';
+  return `${pad(d.getUTCDate())} ${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}Z`;
+}
+function toLocalInput(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function setStatus(msg, err) { const el = $('status'); el.textContent = msg; el.classList.toggle('err', !!err); }
+
+/* ───────── 지도 ───────── */
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([36.5, 127.8], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 15, attribution: '© OpenStreetMap'
+}).addTo(map);
+const layers = { area: L.layerGroup().addTo(map), notam: L.layerGroup().addTo(map), ac: L.layerGroup().addTo(map), trail: L.layerGroup().addTo(map) };
+
+function drawArea() {
+  layers.area.clearLayers();
+  if (!S.center) return;
+  L.circle(S.center, { radius: S.radiusNm * 1852, color: '#3ea6ff', weight: 1.5, fill: false, dashArray: '6 6' }).addTo(layers.area);
+  L.circleMarker(S.center, { radius: 5, color: '#3ea6ff', fillOpacity: 1 }).addTo(layers.area)
+    .bindPopup(`기준점 ${S.icao ? S.icao + ' ' : ''}<br>${S.center[0].toFixed(4)}, ${S.center[1].toFixed(4)}<br>반경 ${S.radiusNm} NM`);
+}
+
+function drawNotams(list) {
+  layers.notam.clearLayers();
+  for (const n of list) {
+    const col = /^Q(R|W)/.test(n.qcode || '') ? '#ff5c5c' : '#ffb020';
+    const pop = `<b>${esc(n.id || '')}</b> ${esc(NOTAM.qCategory(n.qcode))}<br>${fmtKST(n.start)} ~ ${n.perm ? 'PERM' : fmtKST(n.end)}<br>${esc(n.lower || '')} ~ ${esc(n.upper || '')}<br><span class="mono">${esc((n.text || '').slice(0, 300))}</span>`;
+    let drawn = false;
+    for (const g of n.geoms) {
+      if (g.kind === 'polygon') { L.polygon(g.pts, { color: col, weight: 2, fillOpacity: .15 }).bindPopup(pop).addTo(layers.notam); drawn = true; }
+      else if (g.kind === 'circle') { L.circle(g.center, { radius: g.radiusNm * 1852, color: col, weight: 2, fillOpacity: .15 }).bindPopup(pop).addTo(layers.notam); drawn = true; }
+      else if (g.kind === 'point') { L.circleMarker(g.center, { radius: 6, color: col, fillOpacity: .6 }).bindPopup(pop).addTo(layers.notam); drawn = true; }
+    }
+    if (!drawn && n.q && n.q.radiusNm && n.q.radiusNm < 999) {
+      L.circle([n.q.lat, n.q.lon], { radius: n.q.radiusNm * 1852, color: col, weight: 1, dashArray: '3 5', fillOpacity: .05 }).bindPopup(pop).addTo(layers.notam);
+    }
+  }
+}
+
+function acIcon(track, alert, ground) {
+  const c = ground ? '#8b98a5' : alert ? '#ff5c5c' : '#3ccf7a';
+  return L.divIcon({
+    className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+    html: `<svg class="ac-icon" viewBox="0 0 26 26" style="transform:rotate(${track || 0}deg)"><path d="M13 2 L17 20 L13 17 L9 20 Z" fill="${c}" stroke="#000" stroke-width="1"/></svg>`
+  });
+}
+
+function drawAircraft() {
+  layers.ac.clearLayers(); layers.trail.clearLayers();
+  for (const a of visibleAircraft()) {
+    L.marker([a.lat, a.lon], { icon: acIcon(a.track, a.alert, a.ground) })
+      .bindPopup(`<b>${esc(a.flight || a.hex)}</b> ${esc(a.type || '')} ${esc(a.reg || '')}<br>${altStr(a)} · ${a.gs != null ? Math.round(a.gs) + ' kt' : '—'} · ${a.track != null ? Math.round(a.track) + '°' : ''}<br>${a.dist.toFixed(1)} NM / ${Math.round(a.brg)}° (기준점에서)<br><span class="sub">${esc(a.src)}</span>`)
+      .addTo(layers.ac);
+    const tr = S.trails[a.hex];
+    if (tr && tr.length > 1) L.polyline(tr.map(p => [p[0], p[1]]), { color: a.alert ? '#ff5c5c' : '#3ccf7a', weight: 2, opacity: .7 }).addTo(layers.trail);
+  }
+}
+
+/* ───────── 입력 처리 ───────── */
+function readInputs() {
+  const r = parseFloat(S.mode === 'coord' ? $('radius2').value : $('radius1').value);
+  S.radiusNm = isFinite(r) && r > 0 ? r : 25;
+  if (S.mode === 'icao') {
+    const code = $('icao').value.trim().toUpperCase();
+    if (!/^[A-Z]{4}$/.test(code)) throw new Error('ICAO 코드 4글자를 입력하세요.');
+    S.icao = code;
+    const ap = AIRPORTS[code];
+    if (ap) S.center = [ap[1], ap[2]];
+    else if (!S.center) throw new Error(`${code} 좌표가 내장 목록에 없습니다. '좌표' 모드로 위경도를 입력하세요.`);
+  } else if (S.mode === 'coord') {
+    const la = parseFloat($('lat').value), lo = parseFloat($('lon').value);
+    if (!isFinite(la) || !isFinite(lo)) throw new Error('위도·경도를 입력하세요.');
+    S.center = [la, lo]; S.icao = null;
+  } else if (!S.center) {
+    throw new Error('현재 위치를 아직 받지 못했습니다.');
+  }
+  const st = $('tStart').value ? new Date($('tStart').value) : new Date();
+  const dur = parseFloat($('tDur').value);
+  S.winStart = st;
+  S.winEnd = new Date(st.getTime() + (isFinite(dur) && dur > 0 ? dur : 2) * 3600e3);
+  store.set('last', { mode: S.mode, icao: $('icao').value, lat: $('lat').value, lon: $('lon').value, r: S.radiusNm, dur: $('tDur').value });
+}
+
+/** 기준점 근처 비행장 코드 (NOTAM 조회 대상) */
+function nearbyLocations() {
+  const set = new Set([FIR]);
+  if (S.icao) set.add(S.icao);
+  for (const [code, a] of Object.entries(AIRPORTS)) {
+    if (NOTAM.distNm(S.center[0], S.center[1], a[1], a[2]) <= S.radiusNm + 10) set.add(code);
+  }
+  return [...set];
+}
+
+/* ───────── NOTAM ───────── */
+async function fetchNotams() {
+  S.fetchedNotams = [];
+  if (!cfg.worker) { S.notamSource = '붙여넣기'; return; }
+  const locs = nearbyLocations();
+  const u = `${cfg.worker.replace(/\/$/, '')}/notam?lat=${S.center[0]}&lon=${S.center[1]}&r=${S.radiusNm}&loc=${locs.join(',')}`;
+  const res = await fetch(u);
+  if (!res.ok) throw new Error(`NOTAM 서버 응답 ${res.status}`);
+  const j = await res.json();
+  const raws = j.notams || [];
+  S.fetchedNotams = raws.map(NOTAM.parseNotam);
+  S.notamSource = `${j.source || '중계 서버'} · ${raws.length}건 수신`;
+  if (j.errors && j.errors.length) S.notamSource += ` · 일부 오류 ${j.errors.length}`;
+  store.set('notamCache', { t: Date.now(), raws, source: j.source });
+}
+
+function renderNotams() {
+  const all = S.fetchedNotams.concat(S.pastedNotams);
+  const list = NOTAM.filterNotams(all, {
+    lat: S.center[0], lon: S.center[1], radiusNm: S.radiusNm,
+    winStart: S.winStart, winEnd: S.winEnd, includeWide: $('chkWide').checked, locations: nearbyLocations()
+  });
+  $('nCnt').textContent = `(${list.length})`;
+  $('notamWin').textContent = `${fmtKST(S.winStart)} ~ ${fmtKST(S.winEnd)} · ${S.notamSource}`;
+  drawNotams(list);
+  if (!list.length) {
+    $('notamList').innerHTML = `<div class="empty">시간창·반경 안에 해당하는 NOTAM이 없습니다.${all.length ? `<br>(전체 ${all.length}건 중)` : cfg.worker ? '' : '<br>중계 서버를 설정하거나 NOTAM 원문을 붙여넣으세요.'}<br><br>공식 브리핑(AIM Korea·관할 관제기관)으로 반드시 재확인하세요.</div>`;
+    return;
+  }
+  $('notamList').innerHTML = list.map(n => {
+    const now = Date.now();
+    const activeNow = (!n.start || n.start.getTime() <= now) && (!n.end || n.end.getTime() >= now);
+    const cat = NOTAM.qCategory(n.qcode);
+    const catCls = /^Q(R|W)/.test(n.qcode || '') ? 'red' : 'org';
+    const dist = n.area.basis === 'inside' ? '<span class="tag red">기준점 포함</span>'
+      : n.area.distNm != null ? `<span class="tag">${n.area.distNm.toFixed(1)} NM</span>`
+      : n.area.basis === 'wide' ? '<span class="tag">FIR 전역</span>' : '<span class="tag">위치지시자</span>';
+    const alt = (n.lower || n.upper) ? `${esc(n.lower || '?')} ~ ${esc(n.upper || '?')}`
+      : (n.lowerFL != null ? `FL${String(n.lowerFL).padStart(3, '0')} ~ FL${String(n.upperFL).padStart(3, '0')}` : '');
+    return `<div class="card">
+      <div class="top"><b>${esc(n.id || '(번호없음)')}</b>
+        <span class="tag ${catCls}">${esc(cat)}</span>
+        ${activeNow ? '<span class="tag grn">현재 유효</span>' : '<span class="tag blu">시간창 내</span>'}
+        ${dist} <span class="tag">${esc(n.locations.join(' '))}</span>
+        ${n.est ? '<span class="tag org">종료 EST</span>' : ''}</div>
+      <div class="sub">${fmtKST(n.start)} (${fmtUTC(n.start)}) ~ ${n.perm ? 'PERM' : `${fmtKST(n.end)} (${fmtUTC(n.end)})`}${alt ? ' · ' + alt : ''}</div>
+      ${n.schedule ? (n.schedOk === true ? `<div class="sub" style="color:var(--bad)">● D항목 ${esc(n.schedule)} (UTC) — 선택 시간창과 겹침</div>`
+        : n.schedOk === false ? `<div class="sub">○ D항목 ${esc(n.schedule)} (UTC) — 선택 시간창에는 비활성</div>`
+        : `<div class="sub" style="color:var(--warn)">⚠︎ 시간대 지정(D): ${esc(n.schedule)} — 실제 활성 시간 확인 필요</div>`) : ''}
+      <div class="mono" style="margin-top:4px">${esc(n.text)}</div>
+      <details><summary>원문</summary><div class="mono sub">${esc(n.raw)}</div></details>
+    </div>`;
+  }).join('');
+}
+
+/* ───────── 항공기(ADS-B) ───────── */
+function normalizeReadsb(ac, src) {
+  return (ac || []).filter(a => a.lat != null && a.lon != null).map(a => ({
+    hex: a.hex, flight: (a.flight || '').trim(), reg: a.r || '', type: a.t || '',
+    lat: a.lat, lon: a.lon, ground: a.alt_baro === 'ground',
+    alt: a.alt_baro === 'ground' ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro : a.alt_geom),
+    gs: a.gs, track: a.track != null ? a.track : a.true_heading, vr: a.baro_rate != null ? a.baro_rate : a.geom_rate,
+    squawk: a.squawk || '', src
+  }));
+}
+
+async function fetchTraffic() {
+  const [la, lo] = S.center;
+  const r = Math.min(250, Math.max(1, Math.round(S.radiusNm)));
+  let j;
+  if (cfg.worker) {
+    const res = await fetch(`${cfg.worker.replace(/\/$/, '')}/traffic?lat=${la}&lon=${lo}&r=${r}`);
+    if (!res.ok) throw new Error(`항적 서버 응답 ${res.status}`);
+    j = await res.json();
+  } else {
+    // 중계 서버가 없을 때: 공개 API 직접 호출 시도
+    const res = await fetch(`https://api.airplanes.live/v2/point/${la}/${lo}/${r}`);
+    if (!res.ok) throw new Error(`airplanes.live 응답 ${res.status}`);
+    const raw = await res.json();
+    j = { aircraft: normalizeReadsb(raw.ac, 'airplanes.live'), source: 'airplanes.live (직접)' };
+  }
+  const t = Date.now();
+  S.lastTraffic = t;
+  S.aircraft = (j.aircraft || []).map(a => {
+    const dist = NOTAM.distNm(la, lo, a.lat, a.lon);
+    const brg = NOTAM.bearingDeg(la, lo, a.lat, a.lon);
+    const alert = dist <= cfg.alertNm && !a.ground && (a.alt == null || a.alt <= cfg.alertFt);
+    return Object.assign(a, { dist, brg, alert });
+  }).filter(a => a.dist <= S.radiusNm).sort((a, b) => a.dist - b.dist);
+  for (const a of S.aircraft) {
+    const tr = S.trails[a.hex] || (S.trails[a.hex] = []);
+    const last = tr[tr.length - 1];
+    if (!last || last[0] !== a.lat || last[1] !== a.lon) tr.push([a.lat, a.lon, a.alt, t]);
+    if (tr.length > 400) tr.shift();
+  }
+  // 10분 이상 갱신 없는 항적 정리
+  for (const k of Object.keys(S.trails)) {
+    const tr = S.trails[k];
+    if (t - tr[tr.length - 1][3] > 600e3) delete S.trails[k];
+  }
+  $('trafficInfo').textContent = `실시간 ${new Date(t).toLocaleTimeString('ko-KR')} · ${j.source || ''}`;
+}
+
+function altStr(a) {
+  if (a.ground) return '지상';
+  return a.alt != null ? `${Math.round(a.alt).toLocaleString()} ft` : '고도 —';
+}
+function visibleAircraft() {
+  return S.aircraft.filter(a => !cfg.maxFt || a.ground || a.alt == null || a.alt <= cfg.maxFt);
+}
+
+function renderTraffic() {
+  const list = visibleAircraft();
+  const nAlert = list.filter(a => a.alert).length;
+  $('aCnt').textContent = `(${list.length}${nAlert ? ' ⚠︎' + nAlert : ''})`;
+  drawAircraft();
+  if (!list.length) { $('acList').innerHTML = '<div class="empty">반경 내 ADS-B 수신 항공기가 없습니다.<br>(군용기·소형기·무인기 등은 표시되지 않을 수 있음)</div>'; return; }
+  $('acList').innerHTML = list.map(a => `<div class="card ac ${a.alert ? 'alert' : ''}" data-hex="${esc(a.hex)}">
+    <div class="top"><b>${esc(a.flight || a.hex.toUpperCase())}</b>
+      ${a.type ? `<span class="tag">${esc(a.type)}</span>` : ''}${a.reg ? `<span class="tag">${esc(a.reg)}</span>` : ''}
+      ${a.alert ? '<span class="tag red">근접</span>' : ''}${a.squawk && /^(7500|7600|7700)$/.test(a.squawk) ? `<span class="tag red">SQ ${a.squawk}</span>` : ''}</div>
+    <div class="sub">${a.dist.toFixed(1)} NM · 방위 ${Math.round(a.brg)}° · ${altStr(a)}${a.vr ? ` (${a.vr > 0 ? '↑' : '↓'}${Math.abs(Math.round(a.vr))} fpm)` : ''} · ${a.gs != null ? Math.round(a.gs) + ' kt' : '—'} · 침로 ${a.track != null ? Math.round(a.track) + '°' : '—'}</div>
+  </div>`).join('');
+}
+
+async function trafficCycle() {
+  try { await fetchTraffic(); renderTraffic(); }
+  catch (e) { setStatus(`항적 조회 실패: ${e.message}${cfg.worker ? '' : ' — ⚙︎에서 중계 서버를 설정하세요.'}`, true); }
+}
+function restartTimer() {
+  clearInterval(S.timer); S.timer = null;
+  if ($('chkAuto').checked && S.center) S.timer = setInterval(() => { if (!document.hidden) trafficCycle(); }, 10000);
+}
+
+/* ───────── 조회 ───────── */
+async function go() {
+  try { readInputs(); } catch (e) { setStatus(e.message, true); return; }
+  drawArea();
+  map.fitBounds(L.latLng(S.center).toBounds(S.radiusNm * 1852 * 2), { padding: [10, 10] });
+  setStatus('조회 중…');
+  const errs = [];
+  await Promise.all([
+    fetchNotams().catch(e => {
+      errs.push('NOTAM: ' + e.message);
+      const c = store.get('notamCache', null);
+      if (c && c.raws) { S.fetchedNotams = c.raws.map(NOTAM.parseNotam); S.notamSource = `오프라인 캐시 (${new Date(c.t).toLocaleString('ko-KR')})`; }
+    }),
+    fetchTraffic().catch(e => errs.push('항적: ' + e.message))
+  ]);
+  renderNotams(); renderTraffic(); restartTimer();
+  $('miniTxt').textContent = `${S.icao || S.center.map(v => v.toFixed(3)).join(', ')} · ${S.radiusNm} NM · ${fmtKST(S.winStart)}~${fmtKST(S.winEnd).replace(/^\d+\/\d+ /, '')}`;
+  $('ctrl').classList.add('mini');
+  setTimeout(() => map.invalidateSize(), 50);
+  setStatus(errs.length ? errs.join(' / ') : `조회 완료 · 시간창 ${fmtKST(S.winStart)} ~ ${fmtKST(S.winEnd)} (NOTAM 기준) · 항공기는 실시간`, !!errs.length);
+}
+
+/* ───────── UI 바인딩 ───────── */
+$('apList').innerHTML = Object.entries(AIRPORTS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('');
+document.querySelectorAll('#locMode button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#locMode button').forEach(x => x.classList.toggle('on', x === b));
+  S.mode = b.dataset.m;
+  $('rowIcao').classList.toggle('hidden', S.mode !== 'icao');
+  $('rowCoord').classList.toggle('hidden', S.mode === 'icao');
+  if (S.mode === 'gps') {
+    setStatus('현재 위치 확인 중…');
+    navigator.geolocation.getCurrentPosition(p => {
+      S.center = [p.coords.latitude, p.coords.longitude];
+      $('lat').value = S.center[0].toFixed(5); $('lon').value = S.center[1].toFixed(5);
+      setStatus(`현재 위치 ${S.center[0].toFixed(4)}, ${S.center[1].toFixed(4)} (±${Math.round(p.coords.accuracy)} m)`);
+    }, e => setStatus('위치 권한/수신 실패: ' + e.message, true), { enableHighAccuracy: true, timeout: 15000 });
+  }
+});
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('map').classList.toggle('hidden', b.dataset.v !== 'map');
+  $('legend').classList.toggle('hidden', b.dataset.v !== 'map');
+  $('notamView').classList.toggle('hidden', b.dataset.v !== 'notam');
+  $('trafficView').classList.toggle('hidden', b.dataset.v !== 'traffic');
+  if (b.dataset.v === 'map') setTimeout(() => map.invalidateSize(), 50);
+});
+$('btnNow').onclick = () => { $('tStart').value = toLocalInput(new Date()); };
+$('btnGo').onclick = go;
+$('btnRefresh').onclick = go;
+$('btnExpand').onclick = () => { $('ctrl').classList.remove('mini'); setTimeout(() => map.invalidateSize(), 50); };
+$('chkWide').onchange = () => { if (S.center) renderNotams(); };
+$('chkAuto').onchange = restartTimer;
+$('btnClearTrail').onclick = () => { S.trails = {}; drawAircraft(); };
+$('acList').onclick = e => {
+  const c = e.target.closest('.ac'); if (!c) return;
+  const a = S.aircraft.find(x => x.hex === c.dataset.hex); if (!a) return;
+  document.querySelector('.tabs button[data-v="map"]').click();
+  map.setView([a.lat, a.lon], Math.max(map.getZoom(), 10));
+};
+
+$('btnPaste').onclick = () => { $('pasteBox').value = store.get('pasted', ''); $('dlgPaste').showModal(); };
+$('pasteClose').onclick = () => $('dlgPaste').close();
+$('pasteClear').onclick = () => { $('pasteBox').value = ''; };
+$('pasteApply').onclick = () => {
+  const txt = $('pasteBox').value;
+  store.set('pasted', txt);
+  S.pastedNotams = NOTAM.splitNotams(txt).map(NOTAM.parseNotam);
+  $('dlgPaste').close();
+  setStatus(`붙여넣은 NOTAM ${S.pastedNotams.length}건 인식`);
+  if (S.center && S.winStart) renderNotams();
+};
+
+$('btnSettings').onclick = () => {
+  $('setWorker').value = cfg.worker; $('setAlertNm').value = cfg.alertNm; $('setAlertFt').value = cfg.alertFt; $('setMaxFt').value = cfg.maxFt;
+  $('dlgSettings').showModal();
+};
+$('setClose').onclick = () => $('dlgSettings').close();
+$('setSave').onclick = () => {
+  cfg.worker = $('setWorker').value.trim();
+  cfg.alertNm = +$('setAlertNm').value || 5; cfg.alertFt = +$('setAlertFt').value || 5000; cfg.maxFt = +$('setMaxFt').value || 0;
+  store.set('cfg', cfg); $('dlgSettings').close(); setStatus('설정 저장됨');
+};
+
+/* 초기값 복원 */
+(function init() {
+  $('tStart').value = toLocalInput(new Date());
+  const last = store.get('last', null);
+  if (last) {
+    if (last.icao) $('icao').value = last.icao;
+    if (last.lat) $('lat').value = last.lat;
+    if (last.lon) $('lon').value = last.lon;
+    if (last.r) { $('radius1').value = last.r; $('radius2').value = last.r; }
+    if (last.dur) $('tDur').value = last.dur;
+    if (last.mode && last.mode !== 'gps') document.querySelector(`#locMode button[data-m="${last.mode}"]`).click();
+  }
+  const pasted = store.get('pasted', '');
+  if (pasted) S.pastedNotams = NOTAM.splitNotams(pasted).map(NOTAM.parseNotam);
+  if (!cfg.worker) setStatus('⚙︎에서 중계 서버 URL을 설정하면 NOTAM 자동 조회가 됩니다. 지금은 붙여넣기 모드.');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

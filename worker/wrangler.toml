@@ -1,0 +1,7 @@
+name = "notam-relay"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+# GitHub Pages 주소로 바꾸면 다른 사이트에서 이 중계 서버를 못 씁니다.
+ALLOWED_ORIGIN = "https://wdp2j569cc-sys.github.io"
