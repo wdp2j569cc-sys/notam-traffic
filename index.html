@@ -55,7 +55,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
 </head>
 <body>
 <header>
-  <h1>내 주변 NOTAM <a href="full.html">지도·항적 ›</a></h1>
+  <h1>내 주변 NOTAM</h1>
   <div class="row">
     <button class="main" id="locBtn">📍 내 위치로 조회</button>
     <button id="mapBtn" aria-label="지도 보기/숨기기">🗺</button>
@@ -86,7 +86,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
 <script src="notam.js"></script>
 <script>
 'use strict';
-const APP_VER = 'v8 (지도)';
+const APP_VER = 'v9';
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
