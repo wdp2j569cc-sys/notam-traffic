@@ -62,7 +62,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
 </header>
 <main>
   <div id="list"></div>
-  <details id="wideBox"><summary id="wideSum">FIR 전체 적용 NOTAM</summary><div id="wide"></div></details>
+  <details id="wideBox"><summary id="wideSum">광역 NOTAM (FIR·레이더 범위 등)</summary><div id="wide"></div></details>
   <details><summary>NOTAM 원문 직접 붙여넣기</summary>
     <p class="meta">AIM Korea 등에서 복사한 원문을 붙이면 자동 수집분과 합쳐서 내 위치 기준으로 걸러 줍니다.</p>
     <textarea id="paste" placeholder="A1234/26 NOTAMN&#10;Q) RKRR/QRDCA/...&#10;A) ... B) ... C) ...&#10;E) ..."></textarea>
@@ -172,13 +172,15 @@ function render() {
   const winStart = new Date(now), winEnd = new Date(now + Math.max(state.hours, 0.01) * 3600e3);
   const opts = { lat: state.pos.lat, lon: state.pos.lon, radiusNm: state.radius, winStart, winEnd, includeWide: true };
   const res = NOTAM.filterNotams(list, opts);
-  const local = res.filter(n => n.area.basis !== 'wide');
-  const wide = res.filter(n => n.area.basis === 'wide');
+  // Q원 반경이 50NM 이상이고 본문에 구체 좌표가 없으면(레이더·FIR 범위 등) 광역으로 분류
+  const isWide = n => n.area.basis === 'wide' || (n.area.basis === 'qcircle' && n.q && n.q.radiusNm >= 50);
+  const local = res.filter(n => !isWide(n));
+  const wide = res.filter(isWide);
   local.sort((a, b) => (b.area.basis === 'inside') - (a.area.basis === 'inside'));
   $('list').innerHTML = local.length ? local.map(n => card(n, now)).join('')
     : `<div class="empty">반경 ${state.radius} NM 안에 해당 시간 NOTAM이 없습니다.<br>(수집 대상 ${state.data ? (state.data.locations || []).length : 0}개 위치지시자 기준)</div>`;
   $('wideBox').hidden = !wide.length;
-  $('wideSum').textContent = `FIR 전체 적용 NOTAM ${wide.length}건`;
+  $('wideSum').textContent = `광역 NOTAM (FIR·레이더 범위 등) ${wide.length}건`;
   $('wide').innerHTML = wide.map(n => card(n, now)).join('');
 }
 
