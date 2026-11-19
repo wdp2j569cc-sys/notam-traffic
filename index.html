@@ -13,286 +13,503 @@
 <title>내 주변 NOTAM</title>
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
-:root { --bg:#0f1419; --card:#1a2129; --line:#2a333d; --fg:#e6edf3; --dim:#8b98a5; --acc:#4da3ff; --red:#ff6b6b; --yel:#f5c451; --grn:#5fd38d; }
+:root { --bg:#0f1419; --card:#1a2129; --line:#2a333d; --fg:#e6edf3; --dim:#8b98a5; --acc:#4da3ff; --red:#ff6b6b; --yel:#f5c451; --grn:#5fd38d; --org:#ff9f43; --fs:16px; }
+body.night { --bg:#000; --card:#140404; --line:#3a0d0d; --fg:#ff8a80; --dim:#b05a52; --acc:#d32f2f; --red:#ff5252; --yel:#ff8a65; --grn:#e57373; --org:#ff7043; }
+body.night #map { background:#0a0000; }
+body.night .leaflet-tile-pane { filter: invert(1) brightness(.45) sepia(1) hue-rotate(-50deg) saturate(3); }
+body.night .leaflet-control-attribution { background:#200 !important; color:#b05a52; }
+body.op { --fs:19px; }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 -apple-system, system-ui, sans-serif;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
-header { position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 14px 8px; border-bottom:1px solid var(--line); }
-h1 { font-size:20px; margin:0 0 6px; display:flex; justify-content:space-between; align-items:center; }
-h1 a { font-size:14px; color:var(--acc); text-decoration:none; font-weight:400; }
+[hidden] { display:none !important; }
+body { margin:0; background:var(--bg); color:var(--fg); font:var(--fs)/1.45 -apple-system, system-ui, sans-serif;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); -webkit-text-size-adjust:100%; }
+header { padding:10px 14px 8px; border-bottom:1px solid var(--line); }
+h1 { font-size:20px; margin:0 0 8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+h1 .tools { display:flex; gap:6px; }
+h1 .tools button { min-height:36px; min-width:40px; padding:0 8px; font-size:15px; }
 .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-button, select { min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:16px; padding:0 12px; }
-button.main { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; flex:1; }
-.seg { display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-.seg button { border:0; border-radius:0; min-width:56px; }
+.row + .row { margin-top:8px; }
+button { white-space:nowrap; }
+button, select, input { min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:16px; padding:0 12px; }
+input { background:var(--bg); min-width:0; }
+input[type=datetime-local] { flex:1; padding:0 6px; }
+button.main { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; }
+button.grow, input.grow { flex:1; }
+button.on2 { background:var(--yel); color:#2a2000; border-color:var(--yel); }
+.seg { display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; flex-wrap:nowrap; }
+.seg button { border:0; border-radius:0; min-width:48px; padding:0 9px; }
 .seg button.on { background:var(--acc); color:#fff; }
-#status { color:var(--dim); font-size:13px; margin-top:6px; }
-#status .warn { color:var(--yel); }
+.panel { margin-top:8px; padding:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+.panel label { font-size:13px; color:var(--dim); }
+.small { font-size:13px; color:var(--dim); }
+#status { color:var(--dim); font-size:13px; margin-top:8px; }
+.warn { color:var(--yel); } .bad { color:var(--red); font-weight:600; }
+#fresh { margin-top:8px; padding:8px 10px; border-radius:10px; font-size:14px; display:none; }
+#fresh.lv1 { display:block; background:#3a2f0a; color:#f5c451; }
+#fresh.lv2 { display:block; background:#4a1010; color:#ffb3b3; }
+#fresh a { color:inherit; font-weight:700; }
+#winWarn { margin-top:6px; font-size:13px; }
 main { padding:10px 14px 40px; }
-.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; }
+#summary { font-size:14px; color:var(--dim); margin:2px 0 10px; }
+#summary b { color:var(--fg); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; scroll-margin-top:12px; }
 .card.inside { border-color:var(--red); }
-.top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+.card.focus { box-shadow:0 0 0 2px var(--acc); }
+.card.done { opacity:.55; }
+.top { display:flex; justify-content:space-between; gap:8px; align-items:baseline; cursor:pointer; }
 .cat { font-weight:700; }
-.dist { color:var(--dim); font-size:14px; white-space:nowrap; }
-.badge { display:inline-block; font-size:12px; padding:1px 7px; border-radius:6px; margin-right:4px; font-weight:600; }
-.b-in { background:var(--red); color:#fff; } .b-act { background:var(--grn); color:#06210f; } .b-soon { background:var(--yel); color:#2a2000; } .b-off { background:var(--line); color:var(--dim); }
-.meta { color:var(--dim); font-size:13px; margin:4px 0; }
-.txt { white-space:pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size:13px; margin-top:6px; }
+.dist { color:var(--dim); font-size:.85em; white-space:nowrap; }
+.badge { display:inline-block; font-size:12px; padding:1px 7px; border-radius:6px; margin:0 4px 3px 0; font-weight:700; }
+.b-in { background:var(--red); color:#fff; } .b-act { background:var(--grn); color:#06210f; } .b-soon { background:var(--yel); color:#2a2000; }
+.b-off { background:var(--line); color:var(--dim); } .b-unk { background:var(--org); color:#2a1200; } .b-new { background:#b388ff; color:#1a0040; }
+.b-agl { background:transparent; border:1px solid var(--dim); color:var(--dim); }
+.meta { color:var(--dim); font-size:.82em; margin:4px 0; }
+.meta b { color:var(--fg); font-weight:600; }
+.txt { white-space:pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size:.82em; margin-top:6px; }
 .txt.clip { max-height:5.6em; overflow:hidden; -webkit-mask-image:linear-gradient(#000 60%, transparent); }
+.foot { display:flex; justify-content:flex-end; margin-top:6px; }
+.foot button { min-height:38px; font-size:14px; }
+.foot button.ok { background:var(--grn); color:#06210f; border-color:var(--grn); }
 details { margin-top:12px; } summary { color:var(--acc); min-height:44px; display:flex; align-items:center; }
-.empty { color:var(--dim); text-align:center; padding:30px 10px; }
-textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:8px; font:13px ui-monospace, Menlo, monospace; }
+.empty { color:var(--dim); text-align:center; padding:26px 10px; }
+textarea { width:100%; min-height:110px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:8px; font:13px ui-monospace, Menlo, monospace; }
 .note { color:var(--dim); font-size:12px; margin-top:16px; }
+.info { font-size:13px; color:var(--dim); line-height:1.6; }
+.info b { color:var(--fg); }
 #map { height:42vh; min-height:240px; border-radius:12px; border:1px solid var(--line); margin-bottom:10px; background:#cfd8dc; }
 #map.hide { display:none; }
-#map.picking { outline:3px solid var(--yel); }
-#ptPanel { margin-top:8px; padding:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
-#ptPanel input { min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--fg); font-size:16px; padding:0 10px; flex:1; min-width:0; }
+#map.picking { outline:3px solid var(--yel); cursor:crosshair; }
+#map.picking .leaflet-interactive { pointer-events:none !important; }
+#pickRow { position:fixed; left:0; right:0; bottom:0; z-index:1000; margin:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:var(--card); border-top:2px solid var(--yel); flex-wrap:nowrap; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .chip { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:18px; background:var(--bg); }
 .chip button { border:0; background:none; min-height:36px; padding:0 10px; font-size:14px; }
 .chip button.x { color:var(--dim); padding:0 10px 0 2px; }
-button.on2 { background:var(--yel); color:#2a2000; border-color:var(--yel); }
-.card { scroll-margin-top:170px; }
-.card.focus { box-shadow:0 0 0 2px var(--acc); }
-.card .top { cursor:pointer; }
 .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; }
 .leaflet-popup-content { font-size:13px; margin:10px 12px; }
 .leaflet-popup-content button { min-height:32px; font-size:13px; margin-top:6px; padding:0 10px; }
+#printHead { display:none; }
+body.op .plan-only { display:none !important; }
+@media print {
+  :root, body.night { --bg:#fff; --card:#fff; --line:#999; --fg:#000; --dim:#333; --fs:11pt; }
+  body { padding:0; }
+  header, #fresh, .foot, summary, #pasteBox, #infoBox, #pushBox, .note, .noprint { display:none !important; }
+  details { display:block; } details > *:not(summary) { display:block !important; }
+  #printHead { display:block; font-size:10pt; margin-bottom:8px; }
+  #printHead h2 { font-size:14pt; margin:0 0 4px; }
+  .sect-title { display:block !important; font-weight:700; margin:10px 0 4px; }
+  #map { height:300px; page-break-inside:avoid; filter:none !important; }
+  .card { page-break-inside:avoid; border:1px solid #999; }
+  .txt.clip { max-height:none; -webkit-mask-image:none; }
+  .card.done::after { content:'✔ 확인함'; font-size:9pt; }
+  .card.done { opacity:1; }
+}
+.sect-title { display:none; }
 </style>
 </head>
 <body>
 <header>
-  <h1>내 주변 NOTAM</h1>
+  <h1>내 주변 NOTAM
+    <span class="tools">
+      <button id="opBtn" title="수행 모드">✈︎</button>
+      <button id="nightBtn" title="야간 모드">🌙</button>
+    </span>
+  </h1>
   <div class="row">
-    <button class="main" id="locBtn">📍 내 위치</button>
-    <button id="ptBtn">📌 지점</button>
+    <button class="main grow" id="locBtn">📍 내 위치</button>
+    <button id="refBtn" class="grow">📌 기준</button>
     <button id="mapBtn" aria-label="지도 보기/숨기기">🗺</button>
-    <select id="radius" aria-label="반경">
-      <option value="5">5 NM</option><option value="10">10 NM</option><option value="25" selected>25 NM</option><option value="50">50 NM</option><option value="100">100 NM</option>
+    <select id="radius" aria-label="반경/여유폭" style="padding:0 6px">
+      <option value="0">0 NM</option><option value="2">2 NM</option><option value="5">5 NM</option><option value="10">10 NM</option>
+      <option value="25">25 NM</option><option value="50">50 NM</option><option value="100">100 NM</option>
     </select>
   </div>
-  <div class="row" style="margin-top:8px">
+  <div class="row plan-only">
     <div class="seg" id="win">
-      <button data-h="0" class="on">지금</button><button data-h="6">6시간</button><button data-h="24">24시간</button><button data-h="72">3일</button>
+      <button data-h="0">지금</button><button data-h="6">6h</button><button data-h="24">24h</button><button data-h="72">3일</button><button data-h="c">📅 지정</button>
     </div>
   </div>
-  <div id="ptPanel" hidden>
+  <div id="custWin" class="panel plan-only" hidden>
+    <div class="row"><label style="width:34px">시작</label><input type="datetime-local" id="wFrom"></div>
+    <div class="row"><label style="width:34px">종료</label><input type="datetime-local" id="wTo"></div>
+    <div class="small" style="margin-top:6px">KST(한국시간) 입력 · <span id="custZ"></span></div>
+  </div>
+  <div id="winWarn" class="warn"></div>
+
+  <div id="refPanel" class="panel" hidden>
     <div class="row">
-      <input id="ptIn" placeholder="36.514, 127.247 · 363406N1273157E · RKTU" autocapitalize="characters" autocomplete="off">
-      <button id="ptGo">적용</button>
+      <div class="seg" id="kind"><button data-k="point">지점</button><button data-k="area">구역</button><button data-k="route">경로</button></div>
     </div>
-    <div class="row" style="margin-top:8px">
-      <button id="ptPick">👆 지도에서 찍기</button>
-      <input id="ptName" placeholder="이름(선택)">
-      <button id="ptSave">★ 저장</button>
+    <div class="row"><textarea id="refIn" placeholder=""></textarea></div>
+    <div class="row">
+      <button id="refGo" class="main grow">적용</button>
+      <button id="pickBtn" class="grow">👆 지도에서 찍기</button>
     </div>
-    <div class="chips" id="ptList"></div>
-    <div class="meta" id="ptMsg">좌표(십진수·도분초), 비행장 코드, 또는 지도에서 찍은 지점을 중심으로 조회합니다.</div>
+    <div class="row">
+      <input id="refName" class="grow" placeholder="이름(선택) 예: 시험구역 A">
+      <button id="refSave">★ 저장</button>
+    </div>
+    <div class="chips" id="savedList"></div>
+    <div class="small" id="refMsg" style="margin-top:6px"></div>
   </div>
+
+  <details id="condBox" class="plan-only">
+    <summary>⚙︎ 고도·표시 조건 <span class="small" id="condSum" style="margin-left:6px"></span></summary>
+    <div class="panel">
+      <div class="row"><label>시험 고도</label>
+        <input id="altLo" inputmode="numeric" placeholder="하한 ft" style="width:96px"> ~
+        <input id="altHi" inputmode="numeric" placeholder="상한 ft" style="width:96px"> <span class="small">ft AMSL</span></div>
+      <div class="row"><label>AGL 환산 지형고도</label><input id="terrain" inputmode="numeric" style="width:96px"> <span class="small">ft</span></div>
+      <div class="small" style="margin-top:6px">비우면 고도 제한 없음. FL은 ×100 ft로 비교, AGL 상한은 지형고도를 더해 보수적으로 비교합니다.</div>
+      <div class="row"><button id="uncheckedBtn" class="grow">미확인만 보기</button></div>
+    </div>
+  </details>
+
   <div id="status">위치를 확인하는 중…</div>
+  <div id="fresh"></div>
+  <div class="row noprint" style="margin-top:8px">
+    <button id="baseBtn" class="grow">🆕 기준 갱신</button>
+    <button id="printBtn" class="grow plan-only">🖨 브리핑</button>
+    <button id="shareBtn" class="grow plan-only">🔗 공유</button>
+  </div>
 </header>
+<div class="row noprint" id="pickRow" hidden>
+  <span class="small grow" id="pickInfo">지도를 눌러 꼭짓점 추가</span>
+  <button id="pickCancel">취소</button>
+  <button id="pickUndo">↶</button>
+  <button id="pickDone" class="main">완료</button>
+</div>
 <main>
+  <div id="printHead"></div>
   <div id="map"></div>
+  <div id="summary"></div>
   <div id="list"></div>
-  <details id="wideBox"><summary id="wideSum">광역 NOTAM (FIR·레이더 범위 등)</summary><div id="wide"></div></details>
-  <details><summary>NOTAM 원문 직접 붙여넣기</summary>
-    <p class="meta">AIM Korea 등에서 복사한 원문을 붙이면 자동 수집분과 합쳐서 내 위치 기준으로 걸러 줍니다.</p>
+  <details id="noWinBox" class="plan-only"><summary id="noWinSum"></summary><div class="sect-title" id="noWinTitle"></div><div id="noWin"></div></details>
+  <details id="altOutBox" class="plan-only"><summary id="altOutSum"></summary><div class="sect-title" id="altOutTitle"></div><div id="altOut"></div></details>
+  <details id="wideBox" class="plan-only"><summary id="wideSum"></summary><div class="sect-title" id="wideTitle"></div><div id="wide"></div></details>
+  <details id="goneBox"><summary id="goneSum"></summary><div class="sect-title" id="goneTitle"></div><div id="gone"></div></details>
+
+  <details id="infoBox" class="plan-only"><summary>ℹ︎ 이 데이터에 포함되지 않는 것</summary>
+    <div class="info" id="infoTxt"></div>
+  </details>
+  <details id="pushBox" class="plan-only"><summary>🔔 새 NOTAM 알림 (시범)</summary>
+    <div class="panel info" id="pushTxt"></div>
+  </details>
+  <details id="pasteBox" class="plan-only"><summary>NOTAM 원문 직접 붙여넣기</summary>
+    <p class="meta">AIM Korea 등에서 복사한 원문을 붙이면 자동 수집분과 합쳐서 같은 조건으로 걸러 줍니다.</p>
     <textarea id="paste" placeholder="A1234/26 NOTAMN&#10;Q) RKRR/QRDCA/...&#10;A) ... B) ... C) ...&#10;E) ..."></textarea>
     <div class="row" style="margin-top:8px"><button id="pasteBtn">적용</button><button id="pasteClr">지우기</button></div>
   </details>
-  <p class="note">⚠︎ 참고용입니다. 비행 전 반드시 공식 브리핑(AIM Korea, 관할 기관)으로 확인하세요.
-  <span id="ver"></span> 데이터는 GitHub Actions가 FAA NOTAM Search에서 약 30분마다 받아 옵니다. 국내 NOTAM 일부가 빠지거나 늦을 수 있습니다.</p>
+  <p class="note">⚠︎ 참고용입니다. 비행 전 반드시 공식 브리핑(<a href="https://aim.koca.go.kr" style="color:inherit">AIM Korea</a>, 관할 기관)으로 확인하세요.
+  <span id="ver"></span> 데이터는 GitHub Actions가 FAA NOTAM Search에서 약 15분마다 받아 옵니다.</p>
 </main>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="notam.js"></script>
+<script src="nearby-core.js"></script>
 <script>
 'use strict';
-const APP_VER = 'v10';
+const APP_VER = 'v11';
+const VAPID_PUBLIC = 'BAD9VkAR9bCqI_1ssG26vBTq5G4qvh5gfQvUN70rpbKELZG3bid5gG3CsBB01m0A-EpKFjr7HxEpdfzb57w-xno';
+const AIM_URL = 'https://aim.koca.go.kr';
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-/** GitHub Pages 주소에서 데이터 주소 추정: https://<계정>.github.io/<레포>/ → raw notam-data 브랜치 */
 function dataUrl() {
   const custom = new URLSearchParams(location.search).get('data');
   if (custom) return custom;
   const h = location.hostname, seg = location.pathname.split('/').filter(Boolean)[0];
-  if (h.endsWith('.github.io') && seg) {
-    return `https://raw.githubusercontent.com/${h.split('.')[0]}/${seg}/notam-data/notams.json`;
-  }
-  return 'notams.json'; // 로컬 시험용
+  if (h.endsWith('.github.io') && seg) return `https://raw.githubusercontent.com/${h.split('.')[0]}/${seg}/notam-data/notams.json`;
+  return 'notams.json';
 }
 
+// ───────── 상태 ─────────
 const state = {
-  pos: store.get('nn_pos', null),           // GPS {lat, lon, acc, t}
-  mode: store.get('nn_mode', 'gps'),        // 'gps' | 'point'
-  point: store.get('nn_point', null),       // 지정 지점 {lat, lon, name}
-  saved: store.get('nn_saved', []),         // 저장 지점 [{lat, lon, name}]
-  picking: false,
+  pos: store.get('nn_pos', null),
+  mode: store.get('nn_mode', 'gps'),            // 'gps' | 'ref'
+  ref: store.get('nn_ref', null),               // {kind, pts:[{lat,lon}], name}
+  saved: store.get('nn_saved2', null),
   radius: store.get('nn_radius', 25),
-  hours: store.get('nn_hours', 0),
-  data: store.get('nn_data', null),         // {updated, source, notams:[raw]}
+  win: store.get('nn_win', { h: 0 }),           // {h:0|6|24|72} 또는 {h:'c', from, to}
+  altLo: store.get('nn_altLo', ''), altHi: store.get('nn_altHi', ''), terrain: store.get('nn_terrain', 1000),
+  data: store.get('nn_data', null),
   pasted: store.get('nn_paste', ''),
-  fetchErr: null
+  baseline: store.get('nn_base', null),         // {t, raws}
+  checks: store.get('nn_checks', {}),
+  onlyUnchecked: store.get('nn_unchk', false),
+  showMap: store.get('nn_map', true),
+  op: store.get('nn_op', false), night: store.get('nn_night', false),
+  fetchErr: null, picking: null, kindSel: 'point'
 };
-$('radius').value = String(state.radius);
-$('paste').value = state.pasted;
-document.querySelectorAll('#win button').forEach(b => b.classList.toggle('on', +b.dataset.h === state.hours));
-
-const AIRPORTS = {
-  RKSI: ['인천', 37.4691, 126.4505], RKSS: ['김포', 37.5583, 126.7906], RKPC: ['제주', 33.5113, 126.4930],
-  RKPK: ['김해', 35.1795, 128.9382], RKTN: ['대구', 35.8941, 128.6589], RKJJ: ['광주', 35.1264, 126.8089],
-  RKJB: ['무안', 34.9914, 126.3828], RKNY: ['양양', 38.0613, 128.6692], RKTU: ['청주', 36.7166, 127.4991],
-  RKNW: ['원주', 37.4383, 127.9604], RKPU: ['울산', 35.5935, 129.3518], RKJY: ['여수', 34.8423, 127.6169],
-  RKTH: ['포항', 35.9879, 129.4203], RKPS: ['사천', 35.0886, 128.0703], RKJK: ['군산', 35.9038, 126.6158],
-  RKSM: ['서울(성남)', 37.4458, 127.1139], RKSO: ['오산', 37.0906, 127.0297], RKSG: ['험프리스', 36.9617, 127.0311],
-  RKSW: ['수원', 37.2394, 127.0071], RKTY: ['예천', 36.6319, 128.3550], RKNN: ['강릉', 37.7536, 128.9439],
-  RKPD: ['정석', 33.3990, 126.7118], RKPE: ['진해', 35.1408, 128.6964], RKTI: ['중원', 36.9658, 127.8853],
-  RKTL: ['울진', 36.7772, 129.4619]
-};
-
-/**
- * 지점 문자열 해석 → {lat, lon, name} 또는 null
- * 지원: "36.514, 127.247" / "N36.514 E127.247" / "363406N1273157E" / "3634N12731E"
- *       "36 34 06N 127 31 57E" / "N36°34'06\" E127°31'57\"" / 비행장 코드 "RKTU"
- */
-function parsePoint(str) {
-  const t = String(str || '').trim().toUpperCase();
-  if (!t) return null;
-  if (AIRPORTS[t]) return { lat: AIRPORTS[t][1], lon: AIRPORTS[t][2], name: `${t} ${AIRPORTS[t][0]}` };
-  const ok = (lat, lon) => isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
-  // 붙여 쓴 도분(초): 363406N1273157E, 3634N12731E, 363406.5N1273157.2E
-  let m = t.replace(/\s+/g, '').match(/^(\d{2})(\d{2})(\d{2}(?:\.\d+)?)?([NS])(\d{3})(\d{2})(\d{2}(?:\.\d+)?)?([EW])$/);
-  if (m) {
-    let lat = +m[1] + +m[2] / 60 + (m[3] ? +m[3] / 3600 : 0), lon = +m[5] + +m[6] / 60 + (m[7] ? +m[7] / 3600 : 0);
-    return ok(m[4] === 'S' ? -lat : lat, m[8] === 'W' ? -lon : lon);
-  }
-  // 도/분/초를 기호·공백으로 구분: N36°34'06" E127°31'57", 36 34 06N 127 31 57E
-  const parts = t.replace(/[°'"′″:]/g, ' ').match(/([NS]?)\s*(\d+(?:\.\d+)?)(?:\s+(\d+(?:\.\d+)?))?(?:\s+(\d+(?:\.\d+)?))?\s*([NS]?)[\s,]+([EW]?)\s*(\d+(?:\.\d+)?)(?:\s+(\d+(?:\.\d+)?))?(?:\s+(\d+(?:\.\d+)?))?\s*([EW]?)$/);
-  if (parts) {
-    const dms = (d, mi, se) => +d + (mi ? +mi / 60 : 0) + (se ? +se / 3600 : 0);
-    let lat = dms(parts[2], parts[3], parts[4]), lon = dms(parts[7], parts[8], parts[9]);
-    if ((parts[1] || parts[5]) === 'S') lat = -lat;
-    if ((parts[6] || parts[10]) === 'W') lon = -lon;
-    return ok(lat, lon);
-  }
-  return null;
+// 이전 버전 지정 지점·저장 지점 이전
+if (!state.saved) {
+  state.saved = (store.get('nn_saved', []) || []).map(p => ({ kind: 'point', pts: [{ lat: p.lat, lon: p.lon }], name: p.name }));
+  store.set('nn_saved2', state.saved);
 }
-
-/** 조회 기준점: GPS 또는 지정 지점 */
-function center() {
-  if (state.mode === 'point' && state.point) return state.point;
-  return state.pos;
+if (!state.ref && store.get('nn_point', null)) {
+  const p = store.get('nn_point'); state.ref = { kind: 'point', pts: [{ lat: p.lat, lon: p.lon }], name: p.name || '지정 지점' };
 }
-const fmtLL = p => `${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`;
+if (state.mode === 'point') state.mode = 'ref';
 
-/** 지도 색: 위치 포함=빨강, 제한/위험구역=주황, 항행경고=노랑, 그 외(비행장·시설)=파랑 */
-function colorOf(n) {
-  if (n.area && n.area.basis === 'inside') return '#ff4d4d';
-  const q = n.qcode || '';
-  if (q[1] === 'R') return '#ff9f43';
-  if (q[1] === 'W') return '#f5c451';
-  return '#4da3ff';
+// ───────── 시간 표기 ─────────
+const pad = n => String(n).padStart(2, '0');
+function kstStr(ms, withDate = true) {
+  const d = new Date(ms + 9 * 3600e3);
+  return (withDate ? `${pad(d.getUTCMonth() + 1)}/${pad(d.getUTCDate())} ` : '') + `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
-const DIRS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
-const dirName = deg => DIRS[Math.round(deg / 45) % 8];
-const kst = d => d ? new Date(d.getTime() + 9 * 3600e3).toISOString().slice(5, 16).replace('-', '/').replace('T', ' ') : '';
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
+function zStr(ms, withDate = true) {
+  const d = new Date(ms);
+  return (withDate ? pad(d.getUTCDate()) + '/' : '') + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + 'Z';
+}
+const both = ms => `${kstStr(ms)} KST <span class="small">(${zStr(ms)})</span>`;
+function span(a, b) {
+  const sameDay = kstStr(a).slice(0, 5) === kstStr(b).slice(0, 5);
+  return `${kstStr(a)}–${sameDay ? kstStr(b, false) : kstStr(b)} KST <span class="small">(${zStr(a)}–${zStr(b, !sameDay)})</span>`;
+}
 function ago(iso) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   if (m < 1) return '방금'; if (m < 60) return m + '분 전';
   if (m < 1440) return Math.floor(m / 60) + '시간 전'; return Math.floor(m / 1440) + '일 전';
 }
+const toLocalInput = ms => { const d = new Date(ms + 9 * 3600e3); return d.toISOString().slice(0, 16); };
+const fromLocalInput = v => { const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) - 9 * 3600e3 : null; };
 
-/** 고도 표기: F/G 항목 우선, 없으면 Q라인 FL */
-function altText(n) {
+/** 조회 시간창 [from, to] (ms) */
+function windowRange() {
+  const now = Date.now();
+  if (state.win.h === 'c' && state.win.from && state.win.to && state.win.to > state.win.from) return [state.win.from, state.win.to];
+  const h = state.win.h === 'c' ? 0 : state.win.h;
+  return [now, now + Math.max(h * 3600e3, 60e3)];
+}
+
+// ───────── 기준 형상 ─────────
+const fmtLL = p => `${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`;
+const KIND_KO = { point: '지점', area: '구역', route: '경로' };
+function refShape() {
+  if (state.mode === 'ref' && state.ref && state.ref.pts.length) return Object.assign({}, state.ref, { buffer: state.radius });
+  if (state.pos) return { kind: 'point', pts: [{ lat: state.pos.lat, lon: state.pos.lon }], name: '내 위치', buffer: state.radius };
+  return null;
+}
+function refLabel() {
+  const r = refShape(); if (!r) return '';
+  if (state.mode !== 'ref') return `📍 내 위치 ${fmtLL(r.pts[0])}${state.pos ? ' (' + ago(state.pos.t) + ')' : ''}`;
+  return `📌 <b>${esc(r.name || KIND_KO[r.kind])}</b> · ${KIND_KO[r.kind]}${r.kind === 'point' ? ' ' + fmtLL(r.pts[0]) : ' ' + r.pts.length + '점'}`;
+}
+
+// ───────── 표시 보조 ─────────
+const DIRS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+const dirName = deg => DIRS[Math.round(deg / 45) % 8];
+function colorOf(x) {
+  if (x.rel && x.rel.basis === 'inside') return '#ff4d4d';
+  const q = x.n.qcode || '';
+  if (q[1] === 'R') return '#ff9f43';
+  if (q[1] === 'W') return '#f5c451';
+  return '#4da3ff';
+}
+const pad3 = v => String(v).padStart(3, '0');
+function altText(x) {
+  const n = x.n;
   if (n.lower || n.upper) return `${n.lower || '?'} ~ ${n.upper || '?'}`;
-  if (n.lowerFL != null && n.upperFL != null) return `FL${String(n.lowerFL).padStart(3, '0')} ~ FL${String(n.upperFL).padStart(3, '0')}`;
+  if (n.lowerFL != null && n.upperFL != null) return `FL${pad3(n.lowerFL)} ~ FL${pad3(n.upperFL)}`;
   return '';
 }
-
-function card(n, now, key) {
-  const a = n.area, inside = a.basis === 'inside';
-  const s = n.start ? n.start.getTime() : -Infinity, e = n.end ? n.end.getTime() : Infinity;
-  let badge;
-  if (s > now) badge = `<span class="badge b-soon">${kst(n.start)} 시작</span>`;
-  else if (n.schedOk === false) badge = '<span class="badge b-off">시간대 외</span>';
-  else badge = '<span class="badge b-act">유효</span>';
-  if (inside) badge = `<span class="badge b-in">${state.mode === 'point' ? '기준점 포함' : '현재 위치 포함'}</span>` + badge;
-  let dist = '';
-  if (a.basis === 'qcircle' && a.distNm === 0) dist = 'Q원 범위 안';
-  else if (a.distNm != null && !inside) {
-    const c = n.geoms[0] ? (n.geoms[0].center || n.geoms[0].pts[0]) : (n.q ? [n.q.lat, n.q.lon] : null);
-    dist = `${a.distNm < 10 ? a.distNm.toFixed(1) : Math.round(a.distNm)} NM` +
-      (c ? ' ' + dirName(NOTAM.bearingDeg(center().lat, center().lon, c[0], c[1])) : '') + (a.basis === 'qcircle' ? ' (Q원 경계)' : '');
-  } else if (a.basis === 'location') dist = (n.locations || []).join(' ');
-  const alt = altText(n);
-  const valid = `${n.start ? kst(n.start) : '?'} ~ ${n.perm ? 'PERM' : n.end ? kst(n.end) : '?'}${n.est ? ' EST' : ''} KST`;
-  const long = (n.text || n.raw).length > 160;
-  return `<div class="card${inside ? ' inside' : ''}" id="c-${key}">
-    <div class="top" onclick="focusMap('${key}')"><span class="cat"><span class="sw" style="background:${colorOf(n)}"></span>${esc(NOTAM.qCategory(n.qcode))}</span><span class="dist">${esc(dist)}</span></div>
-    <div class="meta">${badge}${esc(n.id || '')} ${esc((n.locations || []).join(' '))}</div>
-    <div class="meta">🕒 ${esc(valid)}${n.schedule ? '<br>⏱ ' + esc(n.schedule) : ''}${alt ? '<br>↕ ' + esc(alt) : ''}</div>
-    <div class="txt${long ? ' clip' : ''}" onclick="this.classList.remove('clip')">${esc(n.text || n.raw)}</div>
-  </div>`;
+function altFilter() {
+  const lo = state.altLo === '' || !isFinite(+state.altLo) ? -Infinity : +state.altLo;
+  const hi = state.altHi === '' || !isFinite(+state.altHi) ? Infinity : +state.altHi;
+  return { lo, hi };
 }
 
+// ───────── 데이터 결합 ─────────
+let parsedCache = { src: null, list: [] };
 function allNotams() {
+  const src = (state.data ? state.data.updated : '') + '|' + state.pasted;
+  if (parsedCache.src === src) return parsedCache.list;
   const raws = [];
   if (state.data && state.data.notams) raws.push(...state.data.notams);
   if (state.pasted.trim()) raws.push(...NOTAM.splitNotams(state.pasted));
-  return raws.map(r => { try { return NOTAM.parseNotam(r); } catch (e) { return null; } }).filter(Boolean);
+  parsedCache = { src, list: raws.map(r => { try { return NOTAM.parseNotam(r); } catch (e) { return null; } }).filter(Boolean) };
+  return parsedCache.list;
+}
+let baseCache = { t: null };
+function baselineInfo() {
+  if (!state.baseline) return null;
+  if (baseCache.t !== state.baseline.t) {
+    const list = state.baseline.raws.map(r => { try { return NOTAM.parseNotam(r); } catch (e) { return null; } }).filter(Boolean);
+    baseCache = { t: state.baseline.t, list, keys: new Set(list.map(NEAR.keyOf)), ids: new Set(list.map(n => n.id).filter(Boolean)) };
+  }
+  return baseCache;
+}
+function setBaseline() {
+  state.baseline = { t: new Date().toISOString(), raws: state.data ? state.data.notams.slice() : [] };
+  store.set('nn_base', state.baseline);
+}
+
+// ───────── 렌더링 ─────────
+let keyMap = {};
+function card(x, key) {
+  const n = x.n, now = Date.now(), a = x.rel;
+  keyMap[key] = x.key;
+  const inside = a.basis === 'inside';
+  const ns = NEAR.nowState(n, now);
+  let b = '';
+  if (x.isNew) b += `<span class="badge b-new">${x.changed ? '변경' : 'NEW'}</span>`;
+  if (inside) b += `<span class="badge b-in">${state.mode !== 'ref' ? '현재 위치 포함' : state.ref.kind === 'point' ? '기준점 포함' : '기준과 겹침'}</span>`;
+  if (!ns.known) b += '<span class="badge b-unk">시간대 확인 필요</span>';
+  else if (ns.active) b += `<span class="badge b-act">운용 중${ns.until === Infinity ? ' (PERM)' : ' ~' + kstStr(ns.until, ns.until - now > 20 * 3600e3)}</span>`;
+  else if (ns.next) b += `<span class="badge b-soon">다음 ${kstStr(ns.next[0])}</span>`;
+  else b += '<span class="badge b-off">7일 내 운용 없음</span>';
+  if (x.alt.agl) b += '<span class="badge b-agl">AGL</span>';
+  let dist = '';
+  if (inside) dist = '겹침';
+  else if (a.basis === 'qcircle' && a.distNm === 0) dist = 'Q원 범위 안';
+  else if (a.distNm != null) {
+    const r = refShape(), c = a.center, rp = r.kind === 'point' ? r.pts[0] : null;
+    dist = `${a.distNm < 10 ? a.distNm.toFixed(1) : Math.round(a.distNm)} NM` +
+      (c && rp ? ' ' + dirName(NOTAM.bearingDeg(rp.lat, rp.lon, c[0], c[1])) : '') + (a.basis === 'qcircle' ? ' (Q원)' : '');
+  }
+  const B = n.start ? n.start.getTime() : null, C = n.end ? n.end.getTime() : null;
+  const valid = `${B ? both(B) : '?'} ~ ${n.perm ? 'PERM' : C ? both(C) : '?'}${n.est ? ' EST' : ''}`;
+  let sched = '';
+  if (n.schedule) {
+    sched = `<br>⏱ ${esc(n.schedule.replace(/\s+/g, ' '))}`;
+    if (x.intervals && x.intervals.length) {
+      const shown = x.intervals.slice(0, 3).map(([s, e]) => span(s, e)).join('<br>&nbsp;&nbsp;&nbsp;');
+      sched += `<br>▶ 조회 시간 내 운용: ${shown}${x.intervals.length > 3 ? ` 외 ${x.intervals.length - 3}회` : ''}`;
+    } else if (x.intervals) sched += '<br>▶ 조회 시간 내 운용 없음';
+    else sched += '<br><span class="warn">▶ 운용 시간 형식을 자동 해석하지 못함 — 원문 확인</span>';
+  }
+  const alt = altText(x);
+  const text = n.text || n.raw, long = text.length > 160, done = !!state.checks[x.key];
+  return `<div class="card${inside ? ' inside' : ''}${done ? ' done' : ''}" id="c-${key}">
+    <div class="top" onclick="focusMap('${key}')"><span class="cat"><span class="sw" style="background:${colorOf(x)}"></span>${esc(NEAR.category(n))}</span><span class="dist">${esc(dist)}</span></div>
+    <div class="meta">${b}${esc(n.id || '')} ${esc((n.locations || []).join(' '))}</div>
+    <div class="meta">🕒 ${valid}${sched}${alt ? `<br>↕ <b>${esc(alt)}</b>` : ''}</div>
+    <div class="txt${long && !state.printing ? ' clip' : ''}" onclick="this.classList.remove('clip')">${esc(text)}</div>
+    <div class="foot"><button class="${done ? 'ok' : ''}" onclick="toggleCheck('${key}')">${done ? '✔ 확인함' : '☐ 확인'}</button></div>
+  </div>`;
 }
 
 function render() {
+  const [from, to] = windowRange();
+  const now = Date.now();
+  keyMap = {};
   const st = [];
   if (state.data) st.push(`데이터 ${ago(state.data.updated)} · ${state.data.notams.length}건`);
   if (state.fetchErr) st.push(`<span class="warn">갱신 실패(${esc(state.fetchErr)})${state.data ? ' — 저장된 데이터 표시' : ''}</span>`);
-  if (state.data && Date.now() - new Date(state.data.updated) > 3 * 3600e3) st.push('<span class="warn">데이터가 오래됨</span>');
-  if (state.mode === 'point' && state.point) st.push(`<b>📌 ${esc(state.point.name || '지정 지점')}</b> ${fmtLL(state.point)}`);
-  else if (state.pos) st.push(`📍 내 위치 ${fmtLL(state.pos)} (${ago(state.pos.t)})`);
-  $('status').innerHTML = st.join(' · ') || '위치를 확인하는 중…';
+  const rl = refLabel(); if (rl) st.push(rl);
+  st.push(`시간 ${span(from, to)}`);
+  $('status').innerHTML = st.join(' · ');
+  renderFresh();
+  renderWinWarn(from, to);
+  renderCondSum();
 
-  if (!center()) { drawMap([]); $('list').innerHTML = '<div class="empty">📍 버튼을 눌러 위치 사용을 허용하세요.</div>'; $('wideBox').hidden = true; return; }
+  const ref = refShape();
+  if (!ref) {
+    drawMap([]); $('summary').textContent = '';
+    $('list').innerHTML = '<div class="empty">📍 버튼을 눌러 위치 사용을 허용하거나, 📌 기준에서 지점·구역·경로를 지정하세요.</div>';
+    hideSections(); return;
+  }
   const list = allNotams();
   if (!list.length) {
+    drawMap([]); $('summary').textContent = '';
     $('list').innerHTML = `<div class="empty">NOTAM 데이터가 없습니다.<br>${state.fetchErr ? '자동 수집 데이터를 받지 못했습니다. 아래에 원문을 붙여넣을 수 있습니다.' : '불러오는 중…'}</div>`;
-    $('wideBox').hidden = true; return;
+    hideSections(); return;
   }
-  const now = Date.now();
-  const winStart = new Date(now), winEnd = new Date(now + Math.max(state.hours, 0.01) * 3600e3);
-  const c0 = center();
-  const opts = { lat: c0.lat, lon: c0.lon, radiusNm: state.radius, winStart, winEnd, includeWide: true };
-  const res = NOTAM.filterNotams(list, opts);
-  // Q원 반경이 50NM 이상이고 본문에 구체 좌표가 없으면(레이더·FIR 범위 등) 광역으로 분류
-  const isWide = n => n.area.basis === 'wide' || (n.area.basis === 'qcircle' && n.q && n.q.radiusNm >= 50);
-  const local = res.filter(n => !isWide(n));
-  const wide = res.filter(isWide);
-  local.sort((a, b) => (b.area.basis === 'inside') - (a.area.basis === 'inside'));
-  $('list').innerHTML = local.length ? local.map((n, i) => card(n, now, 'l' + i)).join('')
-    : `<div class="empty">반경 ${state.radius} NM 안에 해당 시간 NOTAM이 없습니다.<br>(수집 대상 ${state.data ? (state.data.locations || []).length : 0}개 위치지시자 기준)</div>`;
-  $('wideBox').hidden = !wide.length;
-  $('wideSum').textContent = `광역 NOTAM (FIR·레이더 범위 등) ${wide.length}건`;
-  $('wide').innerHTML = wide.map((n, i) => card(n, now, 'w' + i)).join('');
-  drawMap(local);
+  const af = altFilter();
+  const res = NEAR.evaluate(list, { ref, from, to, altLo: af.lo, altHi: af.hi, terrainFt: +state.terrain || 0 });
+  const base = baselineInfo();
+  for (const x of res) {
+    x.isNew = !!(base && !base.keys.has(x.key));
+    x.changed = x.isNew && x.n.type === 'NOTAMR' && !!x.n.refId && base.ids.has(x.n.refId);
+  }
+  const wide = res.filter(x => x.rel.basis === 'wide');
+  const local = res.filter(x => x.rel.basis !== 'wide');
+  const altOut = local.filter(x => !x.altOk);
+  const noWin = local.filter(x => x.altOk && x.inWindow === false);
+  let main = local.filter(x => x.altOk && x.inWindow !== false);
+  if (state.op) main = main.filter(x => { const s = NEAR.nowState(x.n, now); return !s.known || s.active || (s.next && s.next[0] - now < 3 * 3600e3); });
+  const unchecked = main.filter(x => !state.checks[x.key]).length;
+  const shown = state.onlyUnchecked ? main.filter(x => !state.checks[x.key]) : main;
+  const newCnt = main.filter(x => x.isNew).length;
+
+  $('summary').innerHTML = `표시 <b>${shown.length}</b>건 · 확인 <b>${main.length - unchecked}/${main.length}</b>` +
+    (newCnt ? ` · <span style="color:#b388ff">신규·변경 <b>${newCnt}</b></span>` : '') +
+    (base ? ` <span class="small">(기준 ${kstStr(new Date(base.t).getTime())} KST)</span>` : '') +
+    (state.onlyUnchecked ? ' · <span class="warn">미확인만</span>' : '') + (state.op ? ' · <b>수행 모드</b>(운용 중·3시간 내 시작)' : '');
+  $('list').innerHTML = shown.length ? shown.map(x => card(x, 'm' + main.indexOf(x))).join('')
+    : `<div class="empty">${main.length ? '모든 항목을 확인했습니다.' : `조건(${KIND_KO[ref.kind]} ±${state.radius} NM, 선택 시간, 고도)에 맞는 NOTAM이 없습니다.`}<br><span class="small">수집 대상 ${state.data ? (state.data.locations || []).length : 0}개 위치지시자 기준</span></div>`;
+  section('noWin', noWin, '선택 시간대에 운용하지 않는 NOTAM (D항목 기준)', 'n');
+  section('altOut', altOut, '시험 고도 범위 밖 NOTAM', 'a');
+  section('wide', wide, '광역 NOTAM (FIR·레이더 범위 등)', 'w');
+  renderGone(base, ref, from, to, af, list);
+  drawMap(main.map((x, i) => ({ x, key: 'm' + i })));
+  $('baseBtn').textContent = newCnt ? `🆕 기준 갱신 (신규 ${newCnt})` : '🆕 기준 갱신';
+}
+function section(id, arr, title, p) {
+  $(id + 'Box').hidden = !arr.length;
+  $(id + 'Sum').textContent = `${title} ${arr.length}건`;
+  $(id + 'Title').textContent = `${title} ${arr.length}건`;
+  $(id).innerHTML = arr.map((x, i) => card(x, p + i)).join('');
+}
+function hideSections() { ['noWin', 'altOut', 'wide', 'gone'].forEach(id => $(id + 'Box').hidden = true); }
+function renderGone(base, ref, from, to, af, list) {
+  if (!base) { $('goneBox').hidden = true; return; }
+  const cur = new Set(list.map(NEAR.keyOf));
+  const gone = NEAR.evaluate(base.list.filter(n => !cur.has(NEAR.keyOf(n))), { ref, from, to, altLo: af.lo, altHi: af.hi, terrainFt: +state.terrain || 0 })
+    .filter(x => x.rel.basis !== 'wide');
+  $('goneBox').hidden = !gone.length;
+  const t = `기준 이후 사라진 NOTAM (취소·대체·만료) ${gone.length}건`;
+  $('goneSum').textContent = t; $('goneTitle').textContent = t;
+  $('gone').innerHTML = gone.map((x, i) => card(x, 'g' + i)).join('');
+}
+function renderFresh() {
+  const el = $('fresh');
+  if (!state.data) { el.className = ''; return; }
+  const m = (Date.now() - new Date(state.data.updated).getTime()) / 60000;
+  const aim = `<a href="${AIM_URL}" target="_blank" rel="noopener">AIM Korea</a>`;
+  if (m > 90) { el.className = 'lv2'; el.innerHTML = `⚠︎ 데이터가 ${ago(state.data.updated)} 것입니다. 이후 발행·취소분이 빠져 있을 수 있습니다. 비행 전 ${aim}에서 최종 확인하세요.`; }
+  else if (m > 35) { el.className = 'lv1'; el.innerHTML = `데이터 ${ago(state.data.updated)} · 자동 갱신이 지연되고 있습니다. 비행 전 ${aim} 최종 확인.`; }
+  else if (state.op) { el.className = 'lv1'; el.innerHTML = `수행 전 ${aim} 최종 확인 · 데이터 ${ago(state.data.updated)}`; }
+  else el.className = '';
+}
+function renderWinWarn(from, to) {
+  const now = Date.now(), w = [];
+  if (from > now + 7 * 864e5) w.push('⚠︎ NOTAM은 보통 비행 1~2주 전에 발행됩니다. 선택한 시간의 NOTAM은 아직 발행되지 않았을 수 있습니다. 가까워지면 다시 확인하세요.');
+  if (to < now) w.push('⚠︎ 지난 시간입니다. 수집 데이터에는 현재 유효한 NOTAM만 있어 당시 NOTAM이 빠져 있을 수 있습니다.');
+  $('winWarn').innerHTML = w.join('<br>');
+  if (state.win.h === 'c') $('custZ').textContent = `UTC ${zStr(from)} ~ ${zStr(to)}`;
+}
+function renderCondSum() {
+  const af = altFilter(), parts = [];
+  if (af.lo !== -Infinity || af.hi !== Infinity) parts.push(`${af.lo === -Infinity ? 'SFC' : af.lo + 'ft'}~${af.hi === Infinity ? 'UNL' : af.hi + 'ft'}`);
+  if (state.onlyUnchecked) parts.push('미확인만');
+  $('condSum').textContent = parts.join(' · ');
 }
 
-// ---------- 지도 ----------
-let map = null, layers = null, shapes = {};
-state.showMap = store.get('nn_map', true);
+// ───────── 확인 체크 ─────────
+function toggleCheck(cardKey) {
+  const key = keyMap[cardKey]; if (!key) return;
+  if (state.checks[key]) delete state.checks[key]; else state.checks[key] = Date.now();
+  store.set('nn_checks', state.checks); render();
+}
+
+// ───────── 지도 ─────────
+let map = null, layers = null, shapes = {}, pickLayer = null;
 function initMap() {
   if (map || typeof L === 'undefined') return;
   map = L.map('map', { zoomControl: false, attributionControl: true }).setView([36.5, 127.8], 7);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16, attribution: '© OpenStreetMap' }).addTo(map);
-  layers = { me: L.layerGroup().addTo(map), notam: L.layerGroup().addTo(map) };
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16, crossOrigin: true, attribution: '© OpenStreetMap' }).addTo(map);
+  layers = { ref: L.layerGroup().addTo(map), notam: L.layerGroup().addTo(map) };
+  pickLayer = L.layerGroup().addTo(map);
   map.on('click', e => {
     if (!state.picking) return;
-    setPicking(false);
-    setPoint({ lat: +e.latlng.lat.toFixed(5), lon: +e.latlng.lng.toFixed(5), name: $('ptName').value.trim() || '지도 지점' });
+    state.picking.push({ lat: +e.latlng.lat.toFixed(5), lon: +e.latlng.lng.toFixed(5) });
+    if (state.kindSel === 'point') { finishPick(); return; }
+    drawPick();
   });
 }
 function applyMapVisibility() {
@@ -303,59 +520,63 @@ function applyMapVisibility() {
     return;
   }
   el.classList.toggle('hide', !state.showMap);
-  $('mapBtn').classList.toggle('main', false);
   $('mapBtn').style.opacity = state.showMap ? 1 : .5;
   if (state.showMap) { initMap(); setTimeout(() => map && map.invalidateSize(), 50); }
 }
-function popupHtml(n, key) {
-  const valid = `${n.start ? kst(n.start) : '?'} ~ ${n.perm ? 'PERM' : n.end ? kst(n.end) : '?'}`;
-  const alt = altText(n);
-  return `<b>${esc(NOTAM.qCategory(n.qcode))}</b> ${esc(n.id || '')}<br>${esc(valid)} KST` +
-    (alt ? `<br>↕ ${esc(alt)}` : '') + (n.schedule ? `<br>⏱ ${esc(n.schedule)}` : '') +
+function popupHtml(x, key) {
+  const n = x.n, B = n.start ? n.start.getTime() : null, C = n.end ? n.end.getTime() : null;
+  const alt = altText(x);
+  return `<b>${esc(NEAR.category(n))}</b> ${esc(n.id || '')}<br>${B ? kstStr(B) : '?'} ~ ${n.perm ? 'PERM' : C ? kstStr(C) : '?'} KST` +
+    (alt ? `<br>↕ ${esc(alt)}` : '') + (n.schedule ? `<br>⏱ ${esc(n.schedule.slice(0, 60))}` : '') +
     `<br>${esc((n.text || '').slice(0, 90))}${(n.text || '').length > 90 ? '…' : ''}` +
     `<br><button onclick="showCard('${key}')">목록에서 보기</button>`;
 }
-function drawMap(local) {
+function drawRef(group, r) {
+  const ll = r.pts.map(p => [p.lat, p.lon]);
+  if (r.kind === 'point') {
+    if (r.buffer) L.circle(ll[0], { radius: r.buffer * 1852, color: '#4da3ff', weight: 1.5, fill: false, dashArray: '6 6', interactive: false }).addTo(group);
+    if (state.mode === 'ref') L.circleMarker(ll[0], { radius: 8, color: '#fff', weight: 2, fillColor: '#ff4d4d', fillOpacity: 1 }).bindPopup(esc(r.name || '기준점')).addTo(group);
+    return;
+  }
+  if (r.kind === 'area') L.polygon(ll, { color: '#e040fb', weight: 2.5, fillOpacity: .08 }).bindPopup(esc(r.name || '기준 구역')).addTo(group);
+  else {
+    L.polyline(ll, { color: '#e040fb', weight: 3 }).bindPopup(esc(r.name || '기준 경로')).addTo(group);
+    ll.forEach(p => L.circleMarker(p, { radius: 4, color: '#e040fb', fillOpacity: 1 }).addTo(group));
+  }
+  if (r.buffer) ll.forEach(p => L.circle(p, { radius: r.buffer * 1852, color: '#e040fb', weight: 1, fill: false, dashArray: '3 6', interactive: false }).addTo(group));
+}
+function drawMap(items) {
   if (!state.showMap || typeof L === 'undefined') return;
   initMap();
-  layers.me.clearLayers(); layers.notam.clearLayers(); shapes = {};
-  if (!center()) return;
-  const me = [center().lat, center().lon];
-  const ring = L.circle(me, { radius: state.radius * 1852, color: '#4da3ff', weight: 1.5, fill: false, dashArray: '6 6', interactive: false }).addTo(layers.me);
-  if (state.pos) L.circleMarker([state.pos.lat, state.pos.lon], { radius: 7, color: '#fff', weight: 2, fillColor: '#1e88ff', fillOpacity: 1 }).bindPopup('현재 위치(GPS)').addTo(layers.me);
-  if (state.mode === 'point' && state.point) {
-    L.circleMarker(me, { radius: 8, color: '#fff', weight: 2, fillColor: '#ff4d4d', fillOpacity: 1 })
-      .bindPopup(`📌 ${esc(state.point.name || '지정 지점')}<br>${fmtLL(state.point)}`).addTo(layers.me);
-  }
-  // 큰 구역을 먼저 그려 작은 구역이 위에 오게 함
-  const items = local.map((n, i) => ({ n, key: 'l' + i }));
+  layers.ref.clearLayers(); layers.notam.clearLayers(); shapes = {};
+  const r = refShape();
+  if (state.pos) L.circleMarker([state.pos.lat, state.pos.lon], { radius: 7, color: '#fff', weight: 2, fillColor: '#1e88ff', fillOpacity: 1 }).bindPopup('현재 위치(GPS)').addTo(layers.ref);
+  if (!r) return;
+  drawRef(layers.ref, r);
   const size = n => n.geoms.length ? (n.geoms[0].radiusNm || (n.geoms[0].pts ? 5 : 0)) : (n.q ? n.q.radiusNm || 0 : 0);
-  items.sort((a, b) => size(b.n) - size(a.n));
-  for (const { n, key } of items) {
-    const col = colorOf(n), pop = popupHtml(n, key), grp = [];
+  items.slice().sort((a, b) => size(b.x.n) - size(a.x.n)).forEach(({ x, key }) => {
+    const n = x.n, col = colorOf(x), grp = [];
     for (const g of n.geoms) {
       if (g.kind === 'polygon') grp.push(L.polygon(g.pts, { color: col, weight: 2, fillOpacity: .18 }));
       else if (g.kind === 'circle') grp.push(L.circle(g.center, { radius: g.radiusNm * 1852, color: col, weight: 2, fillOpacity: .18 }));
       else if (g.kind === 'point') grp.push(L.circleMarker(g.center, { radius: 6, color: col, fillOpacity: .7 }));
     }
-    if (!grp.length && n.q) {
-      // 본문 좌표가 없으면 Q라인 원(비행장 NOTAM 등)을 점선으로
-      grp.push(L.circle([n.q.lat, n.q.lon], { radius: Math.max(n.q.radiusNm, 0.5) * 1852, color: col, weight: 1.5, dashArray: '4 5', fillOpacity: .06 }));
-    }
-    if (!grp.length) continue;
-    const fg = L.featureGroup(grp).bindPopup(pop).addTo(layers.notam);
-    shapes[key] = fg;
-  }
-  if (!drawMap.fitted || drawMap.fitted !== `${me}|${state.radius}`) {
-    map.fitBounds(ring.getBounds(), { padding: [10, 10] });
-    drawMap.fitted = `${me}|${state.radius}`;
+    if (!grp.length && n.q) grp.push(L.circle([n.q.lat, n.q.lon], { radius: Math.max(n.q.radiusNm, 0.5) * 1852, color: col, weight: 1.5, dashArray: '4 5', fillOpacity: .06 }));
+    if (!grp.length) return;
+    shapes[key] = L.featureGroup(grp).bindPopup(popupHtml(x, key)).addTo(layers.notam);
+  });
+  const sig = JSON.stringify(r.pts) + '|' + state.radius;
+  if (drawMap.fitted !== sig) {
+    if (r.kind === 'point') map.fitBounds(L.latLng(r.pts[0].lat, r.pts[0].lon).toBounds(Math.max(state.radius, 2) * 1852 * 2), { padding: [10, 10] });
+    else map.fitBounds(L.latLngBounds(r.pts.map(p => [p.lat, p.lon])).pad(0.15), { padding: [10, 10] });
+    drawMap.fitted = sig;
   }
 }
 function focusMap(key) {
   const fg = shapes[key];
   if (!fg || !map) return;
   if (!state.showMap) { state.showMap = true; store.set('nn_map', true); applyMapVisibility(); render(); }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
   map.closePopup();
   map.once('moveend', () => fg.openPopup());
   map.fitBounds(fg.getBounds(), { paddingTopLeft: [20, 150], paddingBottomRight: [20, 20], maxZoom: 13, animate: false });
@@ -366,113 +587,291 @@ function showCard(key) {
   el.classList.add('focus');
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-$('mapBtn').onclick = () => { state.showMap = !state.showMap; store.set('nn_map', state.showMap); applyMapVisibility(); drawMap.fitted = null; render(); };
 
+// ───────── 기준 지정 ─────────
+const REF_HINT = {
+  point: '한 지점: 36.514, 127.247 · 363406N1273157E · RKTU',
+  area: '구역 꼭짓점(3개 이상), 한 줄에 하나 또는 NOTAM식 나열:\n363000N1271000E 363000N1273000E 362000N1273000E',
+  route: '경로 지점(2개 이상), 한 줄에 하나 또는 "RKTU - 363000N1271000E - RKSI"'
+};
+function setKind(k) {
+  state.kindSel = k;
+  document.querySelectorAll('#kind button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  $('refIn').placeholder = REF_HINT[k];
+  $('refMsg').textContent = k === 'point' ? '반경은 상단 NM 선택값을 씁니다.' : `상단 NM 선택값은 ${k === 'area' ? '구역' : '경로'} 둘레 여유폭(버퍼)으로 씁니다.`;
+}
+const refToText = r => r.pts.map(fmtLL).join('\n');
+function setRef(r) {
+  state.ref = r; state.mode = 'ref';
+  store.set('nn_ref', r); store.set('nn_mode', 'ref');
+  $('refPanel').hidden = true;
+  drawMap.fitted = null; updateModeUi(); render();
+}
+function updateModeUi() {
+  $('locBtn').classList.toggle('main', state.mode === 'gps');
+  $('refBtn').classList.toggle('main', state.mode === 'ref');
+}
+function startPick() {
+  state.picking = [];
+  if (pickLayer) pickLayer.clearLayers();
+  if (!state.showMap) { state.showMap = true; store.set('nn_map', true); applyMapVisibility(); render(); }
+  if (map) map.closePopup();
+  $('map').classList.add('picking');
+  $('pickRow').hidden = false;
+  $('pickUndo').hidden = $('pickDone').hidden = state.kindSel === 'point';
+  $('pickBtn').classList.add('on2'); $('pickBtn').textContent = '👆 지도를 누르세요 (취소)';
+  $('pickInfo').textContent = state.kindSel === 'point' ? '지도에서 한 점을 누르세요' : state.kindSel === 'area' ? '꼭짓점을 차례로 누르세요 (3개 이상)' : '경로 지점을 차례로 누르세요 (2개 이상)';
+  document.querySelector('main').style.paddingBottom = '90px';
+  $('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function stopPick() {
+  state.picking = null; if (pickLayer) pickLayer.clearLayers();
+  $('map').classList.remove('picking'); $('pickRow').hidden = true; document.querySelector('main').style.paddingBottom = '';
+  $('pickBtn').classList.remove('on2'); $('pickBtn').textContent = '👆 지도에서 찍기';
+}
+function drawPick() {
+  pickLayer.clearLayers();
+  const ll = state.picking.map(p => [p.lat, p.lon]);
+  if (ll.length > 1) (state.kindSel === 'area' ? L.polygon : L.polyline)(ll, { color: '#ffd600', weight: 3, dashArray: '6 4' }).addTo(pickLayer);
+  ll.forEach(p => L.circleMarker(p, { radius: 5, color: '#ffd600', fillOpacity: 1 }).addTo(pickLayer));
+  $('pickInfo').textContent = `${state.picking.length}점 선택됨`;
+}
+function finishPick() {
+  const pts = state.picking || [], k = state.kindSel;
+  const need = k === 'area' ? 3 : k === 'route' ? 2 : 1;
+  if (pts.length < need) { $('pickInfo').textContent = `${need}점 이상 필요합니다`; return; }
+  stopPick();
+  setRef({ kind: k, pts, name: $('refName').value.trim() || (k === 'point' ? '지도 지점' : k === 'area' ? '지도 구역' : '지도 경로') });
+}
+function renderSaved() {
+  $('savedList').innerHTML = state.saved.map((r, i) =>
+    `<span class="chip"><button onclick="useSaved(${i})">${r.kind === 'point' ? '📌' : r.kind === 'area' ? '⬠' : '〰'} ${esc(r.name)}</button><button class="x" onclick="delSaved(${i})" aria-label="삭제">✕</button></span>`).join('');
+}
+function useSaved(i) { setRef(state.saved[i]); }
+function delSaved(i) { if (confirm(`'${state.saved[i].name}'을(를) 지울까요?`)) { state.saved.splice(i, 1); store.set('nn_saved2', state.saved); renderSaved(); } }
+
+// ───────── 공유 링크 ─────────
+function shareUrl() {
+  const r = refShape(), [from, to] = windowRange(), q = new URLSearchParams();
+  if (r) { q.set('k', r.kind); q.set('p', r.pts.map(p => p.lat.toFixed(5) + ',' + p.lon.toFixed(5)).join(';')); if (r.name) q.set('n', r.name); }
+  q.set('b', state.radius);
+  if (state.win.h === 'c') { q.set('f', Math.round(from / 6e4)); q.set('t', Math.round(to / 6e4)); } else q.set('h', state.win.h);
+  if (state.altLo !== '') q.set('lo', state.altLo);
+  if (state.altHi !== '') q.set('hi', state.altHi);
+  return location.origin + location.pathname + '#' + q.toString();
+}
+function applyHash() {
+  if (!location.hash || location.hash.length < 3) return false;
+  const q = new URLSearchParams(location.hash.slice(1));
+  const pts = (q.get('p') || '').split(';').map(s => s.split(',').map(Number)).filter(a => a.length === 2 && a.every(isFinite)).map(([lat, lon]) => ({ lat, lon }));
+  const k = ['point', 'area', 'route'].includes(q.get('k')) ? q.get('k') : 'point';
+  if (pts.length) { state.ref = { kind: k, pts, name: q.get('n') || '공유된 ' + KIND_KO[k] }; state.mode = 'ref'; store.set('nn_ref', state.ref); store.set('nn_mode', 'ref'); }
+  if (q.has('b') && isFinite(+q.get('b'))) { state.radius = +q.get('b'); store.set('nn_radius', state.radius); }
+  if (q.has('f') && q.has('t')) state.win = { h: 'c', from: +q.get('f') * 6e4, to: +q.get('t') * 6e4 };
+  else if (q.has('h')) state.win = { h: +q.get('h') || 0 };
+  store.set('nn_win', state.win);
+  if (q.has('lo')) { state.altLo = q.get('lo'); store.set('nn_altLo', state.altLo); }
+  if (q.has('hi')) { state.altHi = q.get('hi'); store.set('nn_altHi', state.altHi); }
+  history.replaceState(null, '', location.pathname + location.search);
+  return true;
+}
+
+// ───────── 브리핑 인쇄 ─────────
+function printBrief() {
+  const [from, to] = windowRange(), r = refShape(), af = altFilter(), d = state.data;
+  $('printHead').innerHTML = `<h2>NOTAM 브리핑 — ${esc(r ? (r.name || KIND_KO[r.kind]) : '')}</h2>
+    기준: ${r ? KIND_KO[r.kind] + ' ' + r.pts.map(fmtLL).join(' / ') : '-'} · 여유폭/반경 ${state.radius} NM<br>
+    시간: ${span(from, to)}<br>
+    고도: ${af.lo === -Infinity ? 'SFC' : af.lo + ' ft'} ~ ${af.hi === Infinity ? 'UNL' : af.hi + ' ft'} AMSL (AGL은 지형 ${esc(state.terrain)} ft 가정)<br>
+    데이터: ${d ? esc(d.source || '') + ' · ' + both(new Date(d.updated).getTime()) : '-'} · 출력 ${both(Date.now())}<br>
+    <b>참고용 — 공식 브리핑(AIM Korea)으로 최종 확인할 것.</b>`;
+  const closed = [...document.querySelectorAll('main details')].filter(x => !x.open);
+  closed.forEach(x => x.open = true);
+  state.printing = true; render();
+  const after = () => { state.printing = false; closed.forEach(x => x.open = false); render(); window.removeEventListener('afterprint', after); };
+  window.addEventListener('afterprint', after);
+  setTimeout(() => { if (map) map.invalidateSize(); window.print(); }, 300);
+}
+
+// ───────── 알림(웹 푸시) ─────────
+function renderPush() {
+  const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  let h = `<p>저장한 기준(★ 지점·구역·경로) 근처에 <b>새 NOTAM이 나오면</b> 아이폰 알림을 받습니다. GitHub Actions가 수집할 때마다(약 15분) 비교해 보냅니다.</p>`;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) h += `<p class="warn">이 환경은 웹 푸시를 지원하지 않습니다. iOS 16.4 이상에서 <b>홈 화면에 추가한 앱</b>으로 열어야 합니다.</p>`;
+  else if (!standalone && /iPhone|iPad/.test(navigator.userAgent)) h += `<p class="warn">Safari 탭에서는 알림을 켤 수 없습니다. 공유 → 홈 화면에 추가 후, 홈 화면 아이콘으로 열어 주세요.</p>`;
+  h += `<div class="row"><button id="pushOn" class="main grow">알림 켜기 / 등록 정보 만들기</button></div><div id="pushOut"></div>`;
+  $('pushTxt').innerHTML = h;
+  $('pushOn').onclick = subscribePush;
+}
+function b64ToU8(b) { const p = '='.repeat((4 - b.length % 4) % 4), s = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+async function subscribePush() {
+  const out = $('pushOut');
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { out.innerHTML = '<p class="warn">알림 권한이 거부되었습니다. 설정 › 알림에서 허용하세요.</p>'; return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    const refs = state.saved.length ? state.saved : (refShape() ? [refShape()] : []);
+    const target = { sub: sub.toJSON(), refs: refs.map(r => ({ kind: r.kind, pts: r.pts, name: r.name, buffer: r.buffer != null ? r.buffer : state.radius })) };
+    const json = JSON.stringify(target);
+    out.innerHTML = `<p>✅ 이 기기 알림이 켜졌습니다. 아래 등록 정보를 복사해 GitHub 저장소 <b>Settings › Secrets and variables › Actions</b>에
+      <b>PUSH_TARGETS</b> 이름의 Secret으로 넣어 주세요 (기기가 여럿이면 <code>[정보1, 정보2]</code>처럼 배열로).<br>
+      감시 대상: ${refs.map(r => esc(r.name)).join(', ') || '없음 — 먼저 📌 기준에서 ★ 저장'}</p>
+      <textarea readonly id="pushJson">${esc(json)}</textarea>
+      <div class="row"><button id="pushCopy" class="grow">📋 복사</button></div>`;
+    $('pushCopy').onclick = async () => { try { await navigator.clipboard.writeText(json); $('pushCopy').textContent = '복사됨'; } catch (e) { $('pushJson').select(); } };
+  } catch (e) { out.innerHTML = `<p class="warn">등록 실패: ${esc(e.message)}</p>`; }
+}
+
+// ───────── 데이터 범위 안내 ─────────
+function renderInfo() {
+  const locs = state.data && state.data.locations ? state.data.locations.join(' ') : '';
+  $('infoTxt').innerHTML = `
+    <p><b>수집 출처</b>: ${esc(state.data ? state.data.source : 'FAA NOTAM Search')} — FAA가 재배포하는 국제(ICAO) NOTAM입니다.<br>
+    <b>수집 위치지시자</b>: ${esc(locs) || '-'}</p>
+    <p><b>포함되지 않거나 누락될 수 있는 것</b><br>
+    · 국내 전용 NOTAM, 일부 군 NOTAM(국내 배포분)<br>
+    · <b>AIP 고정 공역</b> — 금지구역(P-73 등)·제한구역(R)·위험구역(D)·군작전구역(MOA)·관제권 등 상시 공역은 NOTAM이 아니어서 표시되지 않습니다. AIP ENR 5·항공지도로 따로 확인하세요.<br>
+    · 드론(초경량비행장치) 비행승인·촬영허가, 지방항공청 협의 사항<br>
+    · SNOWTAM·ASHTAM, 기상(METAR/TAF/SIGMET)<br>
+    · 수집 지연·실패 시 최근 15분~수 시간의 신규·취소분</p>
+    <p>최종 확인: <a href="${AIM_URL}" target="_blank" rel="noopener" style="color:var(--acc)">AIM Korea</a></p>`;
+}
+
+// ───────── 데이터 불러오기 / 위치 ─────────
 async function loadData() {
   try {
-    const r = await fetch(dataUrl() + (dataUrl().includes('?') ? '&' : '?') + 't=' + Math.floor(Date.now() / 60000), { cache: 'no-store' });
+    const u = dataUrl();
+    const r = await fetch(u + (u.includes('?') ? '&' : '?') + 't=' + Math.floor(Date.now() / 60000), { cache: 'no-store' });
     if (!r.ok) throw new Error(r.status === 404 ? '데이터 없음(Actions 실행 전)' : 'HTTP ' + r.status);
     const d = await r.json();
     if (!Array.isArray(d.notams)) throw new Error('형식 오류');
     state.data = { updated: d.updated, source: d.source, locations: d.locations, notams: d.notams };
     state.fetchErr = null;
     store.set('nn_data', state.data);
+    if (!state.baseline) setBaseline();
   } catch (e) {
     state.fetchErr = navigator.onLine === false ? '오프라인' : e.message;
   }
-  render();
+  renderInfo(); render();
 }
-
 function locate() {
-  if (!navigator.geolocation) { $('status').textContent = '이 브라우저는 위치를 지원하지 않습니다.'; return; }
+  if (!navigator.geolocation) return;
   $('locBtn').textContent = '📍 확인 중…';
   navigator.geolocation.getCurrentPosition(p => {
     state.pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, t: new Date().toISOString() };
     store.set('nn_pos', state.pos);
     $('locBtn').textContent = '📍 내 위치';
+    if (state.mode === 'gps') drawMap.fitted = null;
     render();
   }, err => {
     $('locBtn').textContent = '📍 내 위치';
-    const msg = err.code === 1 ? '위치 권한이 거부됨: 설정 › 개인정보 보호 › 위치 서비스 › Safari 웹사이트 › "앱을 사용하는 동안"' : '위치를 가져오지 못했습니다';
-    $('status').innerHTML = `<span class="warn">${msg}</span>` + (state.pos ? ' — 마지막 위치 사용' : '');
-    render();
+    if (state.mode === 'gps') {
+      const msg = err.code === 1 ? '위치 권한이 거부됨: 설정 › 개인정보 보호 › 위치 서비스 › Safari 웹사이트 › "앱을 사용하는 동안"' : '위치를 가져오지 못했습니다';
+      $('status').innerHTML = `<span class="warn">${msg}</span>` + (state.pos ? ' — 마지막 위치 사용' : '');
+    }
   }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
 }
 
-$('locBtn').onclick = () => {
-  state.mode = 'gps'; store.set('nn_mode', 'gps'); drawMap.fitted = null; updateModeUi();
-  locate(); loadData();
+// ───────── 이벤트 ─────────
+function syncControls() {
+  $('radius').value = String(state.radius);
+  document.querySelectorAll('#win button').forEach(b => b.classList.toggle('on', String(b.dataset.h) === String(state.win.h)));
+  $('custWin').hidden = state.win.h !== 'c';
+  if (state.win.h === 'c') {
+    if (!state.win.from) { const n = Date.now(); state.win.from = Math.ceil(n / 3600e3) * 3600e3; state.win.to = state.win.from + 6 * 3600e3; store.set('nn_win', state.win); }
+    $('wFrom').value = toLocalInput(state.win.from); $('wTo').value = toLocalInput(state.win.to);
+  }
+  $('altLo').value = state.altLo; $('altHi').value = state.altHi; $('terrain').value = state.terrain;
+  $('uncheckedBtn').classList.toggle('on2', state.onlyUnchecked);
+  document.body.classList.toggle('op', state.op); document.body.classList.toggle('night', state.night);
+  $('opBtn').classList.toggle('main', state.op); $('nightBtn').classList.toggle('main', state.night);
+  $('paste').value = state.pasted;
+}
+$('locBtn').onclick = () => { state.mode = 'gps'; store.set('nn_mode', 'gps'); drawMap.fitted = null; updateModeUi(); locate(); loadData(); };
+$('refBtn').onclick = () => {
+  const p = $('refPanel');
+  p.hidden = !p.hidden;
+  if (!p.hidden) {
+    setKind(state.ref ? state.ref.kind : 'point');
+    if (state.ref) $('refIn').value = refToText(state.ref);
+    if (state.ref && state.mode !== 'ref') { state.mode = 'ref'; store.set('nn_mode', 'ref'); drawMap.fitted = null; updateModeUi(); render(); }
+  } else stopPick();
+  renderSaved();
 };
-
-// ---------- 지정 지점 ----------
-function updateModeUi() {
-  $('locBtn').classList.toggle('main', state.mode === 'gps');
-  $('ptBtn').classList.toggle('main', state.mode === 'point');
-}
-function setPoint(p) {
-  state.point = p; state.mode = 'point';
-  store.set('nn_point', p); store.set('nn_mode', 'point');
-  $('ptIn').value = fmtLL(p);
-  $('ptMsg').textContent = `기준점: ${p.name || '지정 지점'} (${fmtLL(p)})`;
-  $('ptPanel').hidden = true;
-  drawMap.fitted = null; updateModeUi(); render();
-}
-function setPicking(on) {
-  state.picking = on;
-  $('ptPick').classList.toggle('on2', on);
-  $('ptPick').textContent = on ? '👆 지도를 누르세요 (취소)' : '👆 지도에서 찍기';
-  if (on && !state.showMap) { state.showMap = true; store.set('nn_map', true); applyMapVisibility(); render(); }
-  $('map').classList.toggle('picking', on);
-}
-function renderSaved() {
-  $('ptList').innerHTML = state.saved.map((p, i) =>
-    `<span class="chip"><button onclick="useSaved(${i})">📌 ${esc(p.name)}</button><button class="x" onclick="delSaved(${i})" aria-label="삭제">✕</button></span>`).join('');
-}
-function useSaved(i) { setPoint(state.saved[i]); }
-function delSaved(i) { if (confirm(`'${state.saved[i].name}' 지점을 지울까요?`)) { state.saved.splice(i, 1); store.set('nn_saved', state.saved); renderSaved(); } }
-$('ptBtn').onclick = () => {
-  const panel = $('ptPanel');
-  panel.hidden = !panel.hidden;
-  if (!panel.hidden && state.point && state.mode !== 'point') setPoint(state.point);
-  if (panel.hidden) setPicking(false);
+document.querySelectorAll('#kind button').forEach(b => b.onclick = () => { setKind(b.dataset.k); if (state.picking) startPick(); });
+$('refGo').onclick = () => {
+  const k = state.kindSel, txt = $('refIn').value;
+  let pts;
+  if (k === 'point') { const p = NEAR.parsePoint(txt.trim()); pts = p ? [p] : null; }
+  else pts = NEAR.parsePointList(txt);
+  const need = k === 'area' ? 3 : k === 'route' ? 2 : 1;
+  if (!pts || pts.length < need) { $('refMsg').innerHTML = `<span class="warn">좌표를 읽지 못했거나 점이 부족합니다 (${need}점 이상).</span>`; return; }
+  const nm = $('refName').value.trim() || (k === 'point' && pts[0].name) || KIND_KO[k];
+  setRef({ kind: k, pts: pts.map(p => ({ lat: p.lat, lon: p.lon })), name: nm });
 };
-$('ptGo').onclick = () => {
-  const p = parsePoint($('ptIn').value);
-  if (!p) { $('ptMsg').innerHTML = '<span class="warn">좌표를 읽지 못했습니다. 예: 36.514, 127.247 / 363406N1273157E / RKTU</span>'; return; }
-  p.name = $('ptName').value.trim() || p.name || '지정 지점';
-  setPoint(p);
-};
-$('ptIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('ptGo').click(); });
-$('ptPick').onclick = () => setPicking(!state.picking);
-$('ptSave').onclick = () => {
-  const p = state.mode === 'point' && state.point ? state.point : state.pos;
-  if (!p) return;
-  const name = $('ptName').value.trim() || prompt('저장할 이름', p.name || '') || '';
+$('pickBtn').onclick = () => state.picking ? stopPick() : startPick();
+$('pickUndo').onclick = () => { if (state.picking && state.picking.length) { state.picking.pop(); drawPick(); } };
+$('pickDone').onclick = finishPick;
+$('pickCancel').onclick = stopPick;
+$('refSave').onclick = () => {
+  const r = refShape(); if (!r) return;
+  const name = $('refName').value.trim() || prompt('저장할 이름', r.name || '') || '';
   if (!name) return;
-  const item = { lat: p.lat, lon: p.lon, name };
+  const item = { kind: r.kind, pts: r.pts, name, buffer: state.radius };
   state.saved = state.saved.filter(x => x.name !== name).concat(item);
-  store.set('nn_saved', state.saved); renderSaved();
-  if (state.mode === 'point') { state.point = item; store.set('nn_point', item); render(); }
-  $('ptMsg').textContent = `'${name}' 저장됨`;
-  $('ptName').value = '';
+  store.set('nn_saved2', state.saved); renderSaved();
+  if (state.mode === 'ref') { state.ref = item; store.set('nn_ref', item); render(); }
+  $('refMsg').textContent = `'${name}' 저장됨`; $('refName').value = '';
 };
-$('radius').onchange = e => { state.radius = +e.target.value; store.set('nn_radius', state.radius); render(); };
+$('mapBtn').onclick = () => { state.showMap = !state.showMap; store.set('nn_map', state.showMap); applyMapVisibility(); drawMap.fitted = null; render(); };
+$('radius').onchange = e => { state.radius = +e.target.value; store.set('nn_radius', state.radius); drawMap.fitted = null; render(); };
 document.querySelectorAll('#win button').forEach(b => b.onclick = () => {
-  state.hours = +b.dataset.h; store.set('nn_hours', state.hours);
-  document.querySelectorAll('#win button').forEach(x => x.classList.toggle('on', x === b)); render();
+  const h = b.dataset.h === 'c' ? 'c' : +b.dataset.h;
+  state.win = Object.assign({}, state.win, { h });
+  store.set('nn_win', state.win); syncControls(); render();
 });
+const onWin = () => {
+  const f = fromLocalInput($('wFrom').value), t = fromLocalInput($('wTo').value);
+  if (f && t) { state.win = { h: 'c', from: f, to: t > f ? t : f + 3600e3 }; store.set('nn_win', state.win); render(); }
+};
+$('wFrom').onchange = onWin; $('wTo').onchange = onWin;
+const onAlt = () => {
+  state.altLo = $('altLo').value.trim(); state.altHi = $('altHi').value.trim(); state.terrain = +$('terrain').value || 0;
+  store.set('nn_altLo', state.altLo); store.set('nn_altHi', state.altHi); store.set('nn_terrain', state.terrain); render();
+};
+['altLo', 'altHi', 'terrain'].forEach(id => $(id).onchange = onAlt);
+$('uncheckedBtn').onclick = () => { state.onlyUnchecked = !state.onlyUnchecked; store.set('nn_unchk', state.onlyUnchecked); syncControls(); render(); };
+$('opBtn').onclick = () => { state.op = !state.op; store.set('nn_op', state.op); syncControls(); render(); };
+$('nightBtn').onclick = () => { state.night = !state.night; store.set('nn_night', state.night); syncControls(); };
+$('baseBtn').onclick = () => {
+  if (!state.data) return;
+  if (!confirm('현재 목록을 새 기준으로 삼을까요?\n(이후 새로 나오거나 바뀐 NOTAM에 NEW·변경 표시가 붙습니다)')) return;
+  setBaseline(); render();
+};
+$('printBtn').onclick = printBrief;
+$('shareBtn').onclick = async () => {
+  const url = shareUrl();
+  try {
+    if (navigator.share) await navigator.share({ title: 'NOTAM 조회 조건', url });
+    else { await navigator.clipboard.writeText(url); alert('링크를 복사했습니다.'); }
+  } catch (e) { if (e.name !== 'AbortError') prompt('이 링크를 복사하세요', url); }
+};
 $('pasteBtn').onclick = () => { state.pasted = $('paste').value; store.set('nn_paste', state.pasted); render(); };
 $('pasteClr').onclick = () => { $('paste').value = state.pasted = ''; store.set('nn_paste', ''); render(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { locate(); loadData(); } });
 
-updateModeUi(); renderSaved();
-if (state.point) $('ptIn').value = fmtLL(state.point);
+// ───────── 시작 ─────────
+applyHash();
+syncControls(); updateModeUi(); renderSaved(); renderInfo(); renderPush(); setKind('point');
 $('ver').textContent = '[앱 ' + APP_VER + ']';
 applyMapVisibility();
 render();
 locate();
 loadData();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+setInterval(() => { if (!document.hidden) render(); }, 60000);
 </script>
 </body>
 </html>

@@ -1,22 +1,44 @@
 # 내 주변 NOTAM (iPhone)
 
-`https://wdp2j569cc-sys.github.io/notam-traffic/` 를 열면 **GPS 위치 기준 반경 안의 NOTAM**만 바로 보여 줍니다.
-API 키, Cloudflare Worker 없이 동작합니다.
+`https://wdp2j569cc-sys.github.io/notam-traffic/` — 내 위치 또는 지정한 지점·구역·경로를 기준으로,
+원하는 시간·고도 조건에 걸리는 NOTAM을 목록과 지도로 보여 줍니다. API 키·별도 서버가 필요 없습니다.
+
+## 기능
+**시험계획 수립**
+- 기준: 📍 GPS 위치 / 📌 지점·구역(다각형)·경로(선) — 좌표(십진수·도분초·NOTAM식)·비행장 코드 입력, 지도에서 찍기, ★ 저장
+- 시간: 지금·6h·24h·3일 또는 📅 날짜·시간 지정(KST 입력, UTC 함께 표시). 7일 이후는 "아직 미발행일 수 있음" 경고
+- D항목 운용시간 해석(일일·요일·월별 날짜·날짜 걸침·EXC) → 선택 시간 안의 실제 운용 구간 표시, 운용 없는 것은 따로 분리
+- 시험 고도(ft AMSL) 필터: F/G항목(SFC·ft AMSL/AGL·FL·UNL), AGL 상한은 지형고도를 더해 보수적으로 비교
+- 🖨 브리핑: 조건·데이터 시각·지도·전체 원문을 인쇄/PDF로
+- 🔗 공유: 기준·시간·고도 조건이 담긴 링크
+- ℹ︎ 데이터에 포함되지 않는 것(국내 전용 NOTAM, AIP 고정 공역 등) 안내
+
+**비행시험 수행**
+- 🆕 기준 갱신: 기준 시점 이후 새로 나오거나 바뀐 NOTAM에 NEW/변경, 사라진(취소·대체·만료) NOTAM은 따로 표시
+- 데이터 신선도 경고(35분·90분 초과), AIM Korea 최종 확인 안내
+- 모든 시각 KST와 UTC(Z) 함께 표기
+- NOTAM별 ☐ 확인 체크, 미확인만 보기
+- ✈︎ 수행 모드(지금 운용 중·3시간 내 시작만, 큰 글씨), 🌙 야간 모드
+- 본 적 있는 지도 타일은 저장 → 통신이 끊겨도 표시 (현장 가기 전 해당 지역을 한 번 둘러보세요)
+- 🔔 새 NOTAM 푸시 알림(시범, 아래 설정 필요)
 
 ## 동작 방식
-1. `.github/workflows/notam-fetch.yml` 이 30분마다 FAA NOTAM Search(키 불필요)에서
-   `notam-locations.txt` 에 적힌 위치지시자(RKRR + 국내 비행장)의 NOTAM 원문을 받아
-   `notam-data` 브랜치의 `notams.json` 으로 저장합니다.
-2. 앱(`index.html`)은 그 파일을 받아 내 위치·반경·시간(지금/6h/24h/3일)으로 거르고, 가까운 순으로 보여 줍니다.
-   마지막 데이터는 기기에 저장되어 오프라인에서도 보입니다.
+1. `.github/workflows/notam-fetch.yml` 이 15분마다 FAA NOTAM Search(키 불필요)에서
+   `notam-locations.txt` 의 위치지시자(RKRR + 국내 비행장) NOTAM 원문을 받아 `notam-data` 브랜치 `notams.json` 으로 저장
+2. 앱(`index.html` + `nearby-core.js` 판정 로직)이 그 파일을 받아 조건대로 거름. 마지막 데이터는 기기에 저장되어 오프라인에서도 보임
 
 ## 처음 한 번 설정
-1. 저장소 **Settings → Actions → General → Workflow permissions** 를 *Read and write* 로.
-2. **Actions → NOTAM 자동 수집 → Run workflow** 로 첫 실행 (이후 자동).
-3. iPhone Safari로 위 주소 열기 → 위치 허용 → 공유 → **홈 화면에 추가**.
+1. Settings → Actions → General → Workflow permissions: *Read and write*
+2. Actions → NOTAM 자동 수집 → Run workflow (이후 자동)
+3. iPhone Safari로 위 주소 → 위치 허용 → 공유 → **홈 화면에 추가**
 
-수집 위치를 바꾸려면 `notam-locations.txt` 를 고치세요. 다른 나라에서 쓰면 그 지역 FIR·비행장 코드를 넣으면 됩니다.
-기존의 지도·항적 화면은 `full.html` 로 옮겼습니다.
+### 푸시 알림 (선택)
+1. 저장소 Settings → Secrets and variables → Actions 에 `VAPID_PRIVATE_KEY` (별도로 전달된 값) 등록
+2. 홈 화면 앱에서 📌 기준을 ★ 저장 → 🔔 새 NOTAM 알림 → 알림 켜기 → 나온 등록 정보를 복사
+3. 같은 곳에 `PUSH_TARGETS` 로 등록 (기기 여러 대면 `[정보1, 정보2]`)
+   등록 정보에는 기준 좌표가 들어 있으므로 저장소 파일이 아닌 Secret 으로만 보관하세요.
+
+기존 지도·항적 화면은 `full.html` 에 있습니다.
 
 ---
 
