@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>내 주변 NOTAM</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
 :root { --bg:#0f1419; --card:#1a2129; --line:#2a333d; --fg:#e6edf3; --dim:#8b98a5; --acc:#4da3ff; --red:#ff6b6b; --yel:#f5c451; --grn:#5fd38d; }
 * { box-sizing: border-box; }
@@ -80,12 +80,13 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
     <div class="row" style="margin-top:8px"><button id="pasteBtn">적용</button><button id="pasteClr">지우기</button></div>
   </details>
   <p class="note">⚠︎ 참고용입니다. 비행 전 반드시 공식 브리핑(AIM Korea, 관할 기관)으로 확인하세요.
-  데이터는 GitHub Actions가 FAA NOTAM Search에서 약 30분마다 받아 옵니다. 국내 NOTAM 일부가 빠지거나 늦을 수 있습니다.</p>
+  <span id="ver"></span> 데이터는 GitHub Actions가 FAA NOTAM Search에서 약 30분마다 받아 옵니다. 국내 NOTAM 일부가 빠지거나 늦을 수 있습니다.</p>
 </main>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="notam.js"></script>
 <script>
 'use strict';
+const APP_VER = 'v8 (지도)';
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -182,7 +183,7 @@ function render() {
   if (state.pos) st.push(`위치 ${state.pos.lat.toFixed(3)}, ${state.pos.lon.toFixed(3)} (${ago(state.pos.t)})`);
   $('status').innerHTML = st.join(' · ') || '위치를 확인하는 중…';
 
-  if (!state.pos) { $('list').innerHTML = '<div class="empty">📍 버튼을 눌러 위치 사용을 허용하세요.</div>'; $('wideBox').hidden = true; return; }
+  if (!state.pos) { drawMap([]); $('list').innerHTML = '<div class="empty">📍 버튼을 눌러 위치 사용을 허용하세요.</div>'; $('wideBox').hidden = true; return; }
   const list = allNotams();
   if (!list.length) {
     $('list').innerHTML = `<div class="empty">NOTAM 데이터가 없습니다.<br>${state.fetchErr ? '자동 수집 데이터를 받지 못했습니다. 아래에 원문을 붙여넣을 수 있습니다.' : '불러오는 중…'}</div>`;
@@ -216,7 +217,11 @@ function initMap() {
 }
 function applyMapVisibility() {
   const el = $('map');
-  if (typeof L === 'undefined') { el.classList.add('hide'); $('mapBtn').hidden = true; return; }
+  if (typeof L === 'undefined') {
+    el.classList.remove('hide');
+    el.innerHTML = '<div class="empty">지도 라이브러리를 불러오지 못했습니다.<br>새로고침하거나, 설정 › Safari › 콘텐츠 차단기를 확인하세요.</div>';
+    return;
+  }
   el.classList.toggle('hide', !state.showMap);
   $('mapBtn').classList.toggle('main', false);
   $('mapBtn').style.opacity = state.showMap ? 1 : .5;
@@ -231,7 +236,9 @@ function popupHtml(n, key) {
     `<br><button onclick="showCard('${key}')">목록에서 보기</button>`;
 }
 function drawMap(local) {
-  if (!state.showMap || typeof L === 'undefined' || !state.pos) return;
+  if (!state.showMap || typeof L === 'undefined') return;
+  initMap();
+  if (!state.pos) return;
   initMap();
   layers.me.clearLayers(); layers.notam.clearLayers(); shapes = {};
   const me = [state.pos.lat, state.pos.lon];
@@ -319,11 +326,12 @@ $('pasteBtn').onclick = () => { state.pasted = $('paste').value; store.set('nn_p
 $('pasteClr').onclick = () => { $('paste').value = state.pasted = ''; store.set('nn_paste', ''); render(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { locate(); loadData(); } });
 
+$('ver').textContent = '[앱 ' + APP_VER + ']';
 applyMapVisibility();
 render();
 locate();
 loadData();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 </script>
 </body>
 </html>

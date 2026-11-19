@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>NOTAM · 항적 확인</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
   :root {
     --bg: #0f1419; --card: #182028; --line: #2a3540; --txt: #e6edf3; --sub: #8b98a5;
@@ -171,7 +171,7 @@
   </div>
 </dialog>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="notam.js"></script>
 <script>
 'use strict';
@@ -635,7 +635,7 @@ $('setSave').onclick = () => {
   const pasted = store.get('pasted', '');
   if (pasted) S.pastedNotams = NOTAM.splitNotams(pasted).map(NOTAM.parseNotam);
   if (!cfg.worker) setStatus('⚙︎에서 중계 서버 URL을 설정하면 NOTAM 자동 조회가 됩니다. 지금은 붙여넣기 모드.');
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 })();
 </script>
 </body>
