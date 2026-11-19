@@ -1,0 +1,8 @@
+# 자동 수집할 위치지시자 (FIR·비행장 ICAO 코드). '#' 뒤는 주석.
+# 내 주변 화면은 이 목록에서 받은 NOTAM 중 GPS 위치 반경 안의 것만 보여줍니다.
+# 인천 FIR (FIR 전체 NOTAM: 공역 제한·위험구역·훈련 등)
+RKRR
+# 주요 비행장
+RKSI RKSS RKPC RKPK RKTN RKTU RKJJ RKJB RKNY RKPU RKTH RKJY RKNW RKPS RKJK RKTL
+# 군/공용 비행장
+RKSM RKSO RKSW RKSG RKTI RKTY RKPE RKNN RKTE RKSY RKSU RKPD

@@ -1,0 +1,35 @@
+name: NOTAM 자동 수집
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'   # 30분마다 (GitHub 사정으로 몇 분~수십 분 늦을 수 있음)
+  workflow_dispatch:          # Actions 탭에서 수동 실행
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notam-fetch
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: NOTAM 받기
+        run: node scripts/fetch-notams.mjs notam-locations.txt /tmp/notams.json
+      - name: notam-data 브랜치에 저장
+        run: |
+          mkdir /tmp/data && cd /tmp/data
+          git init -q -b notam-data
+          cp /tmp/notams.json .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notams.json
+          git commit -q -m "NOTAM $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" notam-data

@@ -1,6 +1,6 @@
 {
-  "name": "NOTAM · 항적 확인",
-  "short_name": "NOTAM·항적",
+  "name": "내 주변 NOTAM",
+  "short_name": "NOTAM",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

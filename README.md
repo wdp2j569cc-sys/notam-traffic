@@ -1,3 +1,25 @@
+# 내 주변 NOTAM (iPhone)
+
+`https://wdp2j569cc-sys.github.io/notam-traffic/` 를 열면 **GPS 위치 기준 반경 안의 NOTAM**만 바로 보여 줍니다.
+API 키, Cloudflare Worker 없이 동작합니다.
+
+## 동작 방식
+1. `.github/workflows/notam-fetch.yml` 이 30분마다 FAA NOTAM Search(키 불필요)에서
+   `notam-locations.txt` 에 적힌 위치지시자(RKRR + 국내 비행장)의 NOTAM 원문을 받아
+   `notam-data` 브랜치의 `notams.json` 으로 저장합니다.
+2. 앱(`index.html`)은 그 파일을 받아 내 위치·반경·시간(지금/6h/24h/3일)으로 거르고, 가까운 순으로 보여 줍니다.
+   마지막 데이터는 기기에 저장되어 오프라인에서도 보입니다.
+
+## 처음 한 번 설정
+1. 저장소 **Settings → Actions → General → Workflow permissions** 를 *Read and write* 로.
+2. **Actions → NOTAM 자동 수집 → Run workflow** 로 첫 실행 (이후 자동).
+3. iPhone Safari로 위 주소 열기 → 위치 허용 → 공유 → **홈 화면에 추가**.
+
+수집 위치를 바꾸려면 `notam-locations.txt` 를 고치세요. 다른 나라에서 쓰면 그 지역 FIR·비행장 코드를 넣으면 됩니다.
+기존의 지도·항적 화면은 `full.html` 로 옮겼습니다.
+
+---
+
 # NOTAM · 항적 확인 웹앱 (iPhone)
 
 지정한 지역(공항 ICAO 코드 또는 위경도 + 반경 NM)과 시간창(KST)에 대해
