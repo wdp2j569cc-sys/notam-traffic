@@ -11,6 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>내 주변 NOTAM</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root { --bg:#0f1419; --card:#1a2129; --line:#2a333d; --fg:#e6edf3; --dim:#8b98a5; --acc:#4da3ff; --red:#ff6b6b; --yel:#f5c451; --grn:#5fd38d; }
 * { box-sizing: border-box; }
@@ -42,6 +43,14 @@ details { margin-top:12px; } summary { color:var(--acc); min-height:44px; displa
 .empty { color:var(--dim); text-align:center; padding:30px 10px; }
 textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:8px; font:13px ui-monospace, Menlo, monospace; }
 .note { color:var(--dim); font-size:12px; margin-top:16px; }
+#map { height:42vh; min-height:240px; border-radius:12px; border:1px solid var(--line); margin-bottom:10px; background:#cfd8dc; }
+#map.hide { display:none; }
+.card { scroll-margin-top:170px; }
+.card.focus { box-shadow:0 0 0 2px var(--acc); }
+.card .top { cursor:pointer; }
+.sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; }
+.leaflet-popup-content { font-size:13px; margin:10px 12px; }
+.leaflet-popup-content button { min-height:32px; font-size:13px; margin-top:6px; padding:0 10px; }
 </style>
 </head>
 <body>
@@ -49,6 +58,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
   <h1>내 주변 NOTAM <a href="full.html">지도·항적 ›</a></h1>
   <div class="row">
     <button class="main" id="locBtn">📍 내 위치로 조회</button>
+    <button id="mapBtn" aria-label="지도 보기/숨기기">🗺</button>
     <select id="radius" aria-label="반경">
       <option value="5">5 NM</option><option value="10">10 NM</option><option value="25" selected>25 NM</option><option value="50">50 NM</option><option value="100">100 NM</option>
     </select>
@@ -61,6 +71,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
   <div id="status">위치를 확인하는 중…</div>
 </header>
 <main>
+  <div id="map"></div>
   <div id="list"></div>
   <details id="wideBox"><summary id="wideSum">광역 NOTAM (FIR·레이더 범위 등)</summary><div id="wide"></div></details>
   <details><summary>NOTAM 원문 직접 붙여넣기</summary>
@@ -71,6 +82,7 @@ textarea { width:100%; min-height:160px; background:var(--card); color:var(--fg)
   <p class="note">⚠︎ 참고용입니다. 비행 전 반드시 공식 브리핑(AIM Korea, 관할 기관)으로 확인하세요.
   데이터는 GitHub Actions가 FAA NOTAM Search에서 약 30분마다 받아 옵니다. 국내 NOTAM 일부가 빠지거나 늦을 수 있습니다.</p>
 </main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="notam.js"></script>
 <script>
 'use strict';
@@ -103,6 +115,14 @@ $('radius').value = String(state.radius);
 $('paste').value = state.pasted;
 document.querySelectorAll('#win button').forEach(b => b.classList.toggle('on', +b.dataset.h === state.hours));
 
+/** 지도 색: 위치 포함=빨강, 제한/위험구역=주황, 항행경고=노랑, 그 외(비행장·시설)=파랑 */
+function colorOf(n) {
+  if (n.area && n.area.basis === 'inside') return '#ff4d4d';
+  const q = n.qcode || '';
+  if (q[1] === 'R') return '#ff9f43';
+  if (q[1] === 'W') return '#f5c451';
+  return '#4da3ff';
+}
 const DIRS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
 const dirName = deg => DIRS[Math.round(deg / 45) % 8];
 const kst = d => d ? new Date(d.getTime() + 9 * 3600e3).toISOString().slice(5, 16).replace('-', '/').replace('T', ' ') : '';
@@ -121,7 +141,7 @@ function altText(n) {
   return '';
 }
 
-function card(n, now) {
+function card(n, now, key) {
   const a = n.area, inside = a.basis === 'inside';
   const s = n.start ? n.start.getTime() : -Infinity, e = n.end ? n.end.getTime() : Infinity;
   let badge;
@@ -139,8 +159,8 @@ function card(n, now) {
   const alt = altText(n);
   const valid = `${n.start ? kst(n.start) : '?'} ~ ${n.perm ? 'PERM' : n.end ? kst(n.end) : '?'}${n.est ? ' EST' : ''} KST`;
   const long = (n.text || n.raw).length > 160;
-  return `<div class="card${inside ? ' inside' : ''}">
-    <div class="top"><span class="cat">${esc(NOTAM.qCategory(n.qcode))}</span><span class="dist">${esc(dist)}</span></div>
+  return `<div class="card${inside ? ' inside' : ''}" id="c-${key}">
+    <div class="top" onclick="focusMap('${key}')"><span class="cat"><span class="sw" style="background:${colorOf(n)}"></span>${esc(NOTAM.qCategory(n.qcode))}</span><span class="dist">${esc(dist)}</span></div>
     <div class="meta">${badge}${esc(n.id || '')} ${esc((n.locations || []).join(' '))}</div>
     <div class="meta">🕒 ${esc(valid)}${n.schedule ? '<br>⏱ ' + esc(n.schedule) : ''}${alt ? '<br>↕ ' + esc(alt) : ''}</div>
     <div class="txt${long ? ' clip' : ''}" onclick="this.classList.remove('clip')">${esc(n.text || n.raw)}</div>
@@ -177,12 +197,86 @@ function render() {
   const local = res.filter(n => !isWide(n));
   const wide = res.filter(isWide);
   local.sort((a, b) => (b.area.basis === 'inside') - (a.area.basis === 'inside'));
-  $('list').innerHTML = local.length ? local.map(n => card(n, now)).join('')
+  $('list').innerHTML = local.length ? local.map((n, i) => card(n, now, 'l' + i)).join('')
     : `<div class="empty">반경 ${state.radius} NM 안에 해당 시간 NOTAM이 없습니다.<br>(수집 대상 ${state.data ? (state.data.locations || []).length : 0}개 위치지시자 기준)</div>`;
   $('wideBox').hidden = !wide.length;
   $('wideSum').textContent = `광역 NOTAM (FIR·레이더 범위 등) ${wide.length}건`;
-  $('wide').innerHTML = wide.map(n => card(n, now)).join('');
+  $('wide').innerHTML = wide.map((n, i) => card(n, now, 'w' + i)).join('');
+  drawMap(local);
 }
+
+// ---------- 지도 ----------
+let map = null, layers = null, shapes = {};
+state.showMap = store.get('nn_map', true);
+function initMap() {
+  if (map || typeof L === 'undefined') return;
+  map = L.map('map', { zoomControl: false, attributionControl: true }).setView([36.5, 127.8], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16, attribution: '© OpenStreetMap' }).addTo(map);
+  layers = { me: L.layerGroup().addTo(map), notam: L.layerGroup().addTo(map) };
+}
+function applyMapVisibility() {
+  const el = $('map');
+  if (typeof L === 'undefined') { el.classList.add('hide'); $('mapBtn').hidden = true; return; }
+  el.classList.toggle('hide', !state.showMap);
+  $('mapBtn').classList.toggle('main', false);
+  $('mapBtn').style.opacity = state.showMap ? 1 : .5;
+  if (state.showMap) { initMap(); setTimeout(() => map && map.invalidateSize(), 50); }
+}
+function popupHtml(n, key) {
+  const valid = `${n.start ? kst(n.start) : '?'} ~ ${n.perm ? 'PERM' : n.end ? kst(n.end) : '?'}`;
+  const alt = altText(n);
+  return `<b>${esc(NOTAM.qCategory(n.qcode))}</b> ${esc(n.id || '')}<br>${esc(valid)} KST` +
+    (alt ? `<br>↕ ${esc(alt)}` : '') + (n.schedule ? `<br>⏱ ${esc(n.schedule)}` : '') +
+    `<br>${esc((n.text || '').slice(0, 90))}${(n.text || '').length > 90 ? '…' : ''}` +
+    `<br><button onclick="showCard('${key}')">목록에서 보기</button>`;
+}
+function drawMap(local) {
+  if (!state.showMap || typeof L === 'undefined' || !state.pos) return;
+  initMap();
+  layers.me.clearLayers(); layers.notam.clearLayers(); shapes = {};
+  const me = [state.pos.lat, state.pos.lon];
+  const ring = L.circle(me, { radius: state.radius * 1852, color: '#4da3ff', weight: 1.5, fill: false, dashArray: '6 6', interactive: false }).addTo(layers.me);
+  L.circleMarker(me, { radius: 7, color: '#fff', weight: 2, fillColor: '#1e88ff', fillOpacity: 1 }).bindPopup('현재 위치').addTo(layers.me);
+  // 큰 구역을 먼저 그려 작은 구역이 위에 오게 함
+  const items = local.map((n, i) => ({ n, key: 'l' + i }));
+  const size = n => n.geoms.length ? (n.geoms[0].radiusNm || (n.geoms[0].pts ? 5 : 0)) : (n.q ? n.q.radiusNm || 0 : 0);
+  items.sort((a, b) => size(b.n) - size(a.n));
+  for (const { n, key } of items) {
+    const col = colorOf(n), pop = popupHtml(n, key), grp = [];
+    for (const g of n.geoms) {
+      if (g.kind === 'polygon') grp.push(L.polygon(g.pts, { color: col, weight: 2, fillOpacity: .18 }));
+      else if (g.kind === 'circle') grp.push(L.circle(g.center, { radius: g.radiusNm * 1852, color: col, weight: 2, fillOpacity: .18 }));
+      else if (g.kind === 'point') grp.push(L.circleMarker(g.center, { radius: 6, color: col, fillOpacity: .7 }));
+    }
+    if (!grp.length && n.q) {
+      // 본문 좌표가 없으면 Q라인 원(비행장 NOTAM 등)을 점선으로
+      grp.push(L.circle([n.q.lat, n.q.lon], { radius: Math.max(n.q.radiusNm, 0.5) * 1852, color: col, weight: 1.5, dashArray: '4 5', fillOpacity: .06 }));
+    }
+    if (!grp.length) continue;
+    const fg = L.featureGroup(grp).bindPopup(pop).addTo(layers.notam);
+    shapes[key] = fg;
+  }
+  if (!drawMap.fitted || drawMap.fitted !== `${me}|${state.radius}`) {
+    map.fitBounds(ring.getBounds(), { padding: [10, 10] });
+    drawMap.fitted = `${me}|${state.radius}`;
+  }
+}
+function focusMap(key) {
+  const fg = shapes[key];
+  if (!fg || !map) return;
+  if (!state.showMap) { state.showMap = true; store.set('nn_map', true); applyMapVisibility(); render(); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  map.closePopup();
+  map.once('moveend', () => fg.openPopup());
+  map.fitBounds(fg.getBounds(), { paddingTopLeft: [20, 150], paddingBottomRight: [20, 20], maxZoom: 13, animate: false });
+}
+function showCard(key) {
+  const el = $('c-' + key); if (!el) return;
+  document.querySelectorAll('.card.focus').forEach(c => c.classList.remove('focus'));
+  el.classList.add('focus');
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('mapBtn').onclick = () => { state.showMap = !state.showMap; store.set('nn_map', state.showMap); applyMapVisibility(); drawMap.fitted = null; render(); };
 
 async function loadData() {
   try {
@@ -225,6 +319,7 @@ $('pasteBtn').onclick = () => { state.pasted = $('paste').value; store.set('nn_p
 $('pasteClr').onclick = () => { $('paste').value = state.pasted = ''; store.set('nn_paste', ''); render(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { locate(); loadData(); } });
 
+applyMapVisibility();
 render();
 locate();
 loadData();
