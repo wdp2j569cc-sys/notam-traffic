@@ -46,8 +46,15 @@ jobs:
         env:
           PUSH_TARGETS: ${{ secrets.PUSH_TARGETS }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAR_PT: ${{ vars.PUSH_TARGETS != '' }}
+          VAR_VK: ${{ vars.VAPID_PRIVATE_KEY != '' }}
         run: |
-          if [ -z "$PUSH_TARGETS" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then echo "알림 설정 없음 — 건너뜀"; exit 0; fi
+          if [ -z "$PUSH_TARGETS" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
+            echo "알림 설정 없음 — 건너뜀"
+            echo "진단: Secret PUSH_TARGETS=$([ -n "$PUSH_TARGETS" ] && echo 있음 || echo 없음), Secret VAPID_PRIVATE_KEY=$([ -n "$VAPID_PRIVATE_KEY" ] && echo 있음 || echo 없음)"
+            echo "진단: Variables 탭에 PUSH_TARGETS=$VAR_PT, VAPID_PRIVATE_KEY=$VAR_VK (true면 Secrets 탭이 아니라 Variables 탭에 등록된 것)"
+            exit 0
+          fi
           npm i --no-save --no-audit --no-fund web-push@3 >/dev/null
           if [ "${{ inputs.test_push }}" = "true" ]; then node scripts/notify.mjs --test /tmp/prev.json /tmp/notams.json; fi
           node scripts/notify.mjs /tmp/prev.json /tmp/notams.json
