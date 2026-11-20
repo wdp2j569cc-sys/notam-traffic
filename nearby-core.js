@@ -114,6 +114,7 @@
     for (const g of n.geoms) {
       let d;
       if (g.kind === 'polygon') d = distShapes(R, { kind: 'poly', pts: g.pts.map(P) });
+      else if (g.kind === 'line') d = distShapes(R, { kind: 'line', pts: g.pts.map(P) });
       else if (g.kind === 'circle') d = Math.max(0, distPtShape(P(g.center), R) - g.radiusNm);
       else d = distPtShape(P(g.center), R);
       if (d < best) { best = d; center = g.center || g.pts[0]; }
@@ -344,7 +345,47 @@
     return { known: true, active: false, next: iv[0] || null };
   }
 
-  const api = { AIRPORTS, parsePoint, parsePointList, relation, parseSchedule, activeIntervals, parseAlt, altRange,
+  // ───────── 고정 공역·항로(eAIP) 근접 판정 ─────────
+  const TYPE_ORDER = { P: 0, R: 1, D: 2, MOA: 3, UA: 4, CATA: 5, ROUTE: 6, TMA: 7 };
+  const bandOverlap = (lo, hi, aLo, aHi) => !(lo > aHi || hi < aLo);
+  /**
+   * aip: parse-aip.mjs 결과. opts: {ref, altLo, altHi, terrainFt}
+   * 반환 [{kind:'airspace'|'route', type, id, name, distNm, inside, lo, hi, altOk(true/false/null), item, seg}]
+   */
+  function aipConflicts(aip, opts) {
+    const out = [], ref = opts.ref, T = opts.terrainFt || 0;
+    const ftOf = (v, isUpper) => {
+      if (!v) return null;
+      if (v.unl) return Infinity;
+      return v.ft + (isUpper && v.agl ? T : 0);
+    };
+    for (const a of aip.airspaces || []) {
+      const rel = relation({ geoms: a.geoms }, ref);
+      if (rel.distNm == null || rel.distNm > ref.buffer) continue;
+      const lo = ftOf(a.lower, false), hi = ftOf(a.upper, true);
+      const altOk = lo == null || hi == null ? null : bandOverlap(lo, hi, opts.altLo, opts.altHi);
+      out.push({ kind: 'airspace', type: a.type, id: a.id, name: a.name, distNm: rel.distNm, inside: rel.distNm === 0, lo, hi, altOk, item: a });
+    }
+    for (const r of aip.routes || []) {
+      let best = null;
+      for (const sg of r.segs) {
+        const a = r.points[sg.from], b = r.points[sg.to];
+        const rel = relation({ geoms: [{ kind: 'line', pts: [[a.lat, a.lon], [b.lat, b.lon]] }] }, ref);
+        if (rel.distNm == null || rel.distNm > ref.buffer) continue;
+        if (!best || rel.distNm < best.distNm) best = { distNm: rel.distNm, seg: sg };
+      }
+      if (!best) continue;
+      const sg = best.seg;
+      const lo = sg.meaFt != null ? sg.meaFt : sg.lowerFt != null ? sg.lowerFt : 0;
+      const hi = sg.upperFt != null ? sg.upperFt : Infinity;
+      out.push({ kind: 'route', type: 'ROUTE', id: r.id, name: `${r.id} ${r.spec || ''}`.trim(), distNm: best.distNm, inside: best.distNm === 0,
+        lo, hi, altOk: bandOverlap(lo, hi, opts.altLo, opts.altHi), item: r, seg: sg });
+    }
+    out.sort((x, y) => (TYPE_ORDER[x.type] - TYPE_ORDER[y.type]) || (x.distNm - y.distNm));
+    return out;
+  }
+
+  const api = { aipConflicts, AIRPORTS, parsePoint, parsePointList, relation, parseSchedule, activeIntervals, parseAlt, altRange,
     category, evaluate, nowState, keyOf, distShapes, projector };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.NEAR = api;

@@ -1,5 +1,5 @@
 // 앱 셸 캐시 + 지도 타일 캐시 + 푸시 알림
-const CACHE = 'notam-traffic-v12';
+const CACHE = 'notam-traffic-v13';
 const TILES = 'notam-tiles-v1';
 const TILE_MAX = 3000; // 저장할 최대 타일 수 (약 50~60MB 이내)
 const SHELL = [

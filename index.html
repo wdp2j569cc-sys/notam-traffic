@@ -89,6 +89,19 @@ textarea { width:100%; min-height:110px; background:var(--bg); color:var(--fg); 
 .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; }
 .leaflet-popup-content { font-size:13px; margin:10px 12px; }
 .leaflet-popup-content button { min-height:32px; font-size:13px; margin-top:6px; padding:0 10px; }
+.rlabel { background:rgba(0,40,60,.75); color:#e0f7fa; border:0; box-shadow:none; font:600 11px/1.2 -apple-system,sans-serif; padding:1px 4px; }
+.rlabel::before { display:none; }
+#map.zlow .rlabel { display:none; }
+#aipBox { margin:0 0 10px; }
+#aipBox summary { min-height:40px; }
+.aiprow { display:flex; justify-content:space-between; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; margin-top:6px; background:var(--card); cursor:pointer; font-size:.88em; }
+.aiprow.in { border-color:var(--red); }
+.aiprow .r { color:var(--dim); white-space:nowrap; text-align:right; }
+.aiprow .t { font-weight:700; }
+.tag { display:inline-block; font-size:11px; padding:0 6px; border-radius:5px; margin-right:4px; font-weight:700; color:#111; }
+.leaflet-control-layers { font-size:14px; }
+.leaflet-control-layers-overlays label { padding:6px 0; }
+.leaflet-control-layers input { min-height:0; width:18px; height:18px; margin:0 6px 0 0; vertical-align:middle; }
 #printHead { display:none; }
 body.op .plan-only { display:none !important; }
 @media print {
@@ -184,6 +197,7 @@ body.op .plan-only { display:none !important; }
 <main>
   <div id="printHead"></div>
   <div id="map"></div>
+  <details id="aipBox" open><summary id="aipSum">🛩 항로·고정 공역</summary><div class="sect-title" id="aipTitle"></div><div id="aipList"></div></details>
   <div id="summary"></div>
   <div id="list"></div>
   <details id="noWinBox" class="plan-only"><summary id="noWinSum"></summary><div class="sect-title" id="noWinTitle"></div><div id="noWin"></div></details>
@@ -210,9 +224,14 @@ body.op .plan-only { display:none !important; }
 <script src="nearby-core.js"></script>
 <script>
 'use strict';
-const APP_VER = 'v12';
+const APP_VER = 'v13';
 const VAPID_PUBLIC = 'BAD9VkAR9bCqI_1ssG26vBTq5G4qvh5gfQvUN70rpbKELZG3bid5gG3CsBB01m0A-EpKFjr7HxEpdfzb57w-xno';
 const AIM_URL = 'https://aim.koca.go.kr';
+const AIP_TYPES = {
+  P: { ko: '금지구역', col: '#ff1744' }, R: { ko: '제한구역', col: '#ff6d00' }, D: { ko: '위험구역', col: '#ffd600' },
+  MOA: { ko: '군작전구역', col: '#d500f9' }, UA: { ko: '초경량비행장치구역', col: '#00e676' }, CATA: { ko: '민간항공훈련구역', col: '#1de9b6' },
+  TMA: { ko: '접근관제구역', col: '#2979ff' }, ROUTE: { ko: '항로', col: '#00b8d4' }
+};
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -446,6 +465,7 @@ function render() {
   section('noWin', noWin, '선택 시간대에 운용하지 않는 NOTAM (D항목 기준)', 'n');
   section('altOut', altOut, '시험 고도 범위 밖 NOTAM', 'a');
   section('wide', wide, '광역 NOTAM (FIR·레이더 범위 등)', 'w');
+  renderAip(ref, af);
   renderGone(base, ref, from, to, af, list);
   drawMap(main.map((x, i) => ({ x, key: 'm' + i })));
   $('baseBtn').textContent = newCnt ? `🆕 기준 갱신 (신규 ${newCnt})` : '🆕 기준 갱신';
@@ -504,8 +524,12 @@ function initMap() {
   if (map || typeof L === 'undefined') return;
   map = L.map('map', { zoomControl: false, attributionControl: true }).setView([36.5, 127.8], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16, crossOrigin: true, attribution: '© OpenStreetMap' }).addTo(map);
+  map.createPane('aip'); map.getPane('aip').style.zIndex = 350;
   layers = { ref: L.layerGroup().addTo(map), notam: L.layerGroup().addTo(map) };
   pickLayer = L.layerGroup().addTo(map);
+  initAipLayers();
+  map.on('zoomend', () => $('map').classList.toggle('zlow', map.getZoom() < 9));
+  $('map').classList.toggle('zlow', map.getZoom() < 9);
   map.on('click', e => {
     if (!state.picking) return;
     state.picking.push({ lat: +e.latlng.lat.toFixed(5), lon: +e.latlng.lng.toFixed(5) });
@@ -737,10 +761,133 @@ function renderInfo() {
     · 드론(초경량비행장치) 비행승인·촬영허가, 지방항공청 협의 사항<br>
     · SNOWTAM·ASHTAM, 기상(METAR/TAF/SIGMET)<br>
     · 수집 지연·실패 시 최근 15분~수 시간의 신규·취소분</p>
+    <p><b>항로·고정 공역 레이어</b>: ${state.aip ? `AIM Korea eAIP ${esc(state.aip.package || '')} (ENR 3.1·3.3 항로, 5.1 P/R/D, 5.2 MOA, 5.3 CATA, 5.5 UA, 2.1 TMA) — 항로 ${state.aip.routes.length}개, 공역 ${state.aip.airspaces.length}개` : '불러오지 못함'}.
+    관제권(CTR)·비행장교통구역(ATZ)·제주 Class B 등 AD 2/ENR 2.2 공역은 아직 포함되지 않습니다. "경계 근사" 표시는 해안선·분계선·호(arc)를 직선으로 근사한 것입니다.</p>
     <p>최종 확인: <a href="${AIM_URL}" target="_blank" rel="noopener" style="color:var(--acc)">AIM Korea</a></p>`;
 }
 
 // ───────── 데이터 불러오기 / 위치 ─────────
+// ───────── 항로·고정 공역 (eAIP) ─────────
+state.aip = store.get('nn_aip', null);
+state.aipOn = store.get('nn_aipOn', { ROUTE: true, P: true, R: true, D: true, MOA: true, UA: true, CATA: false, TMA: false });
+let aipGroups = null, aipShapes = {};
+function aipUrl() {
+  const h = location.hostname, seg = location.pathname.split('/').filter(Boolean)[0];
+  if (h.endsWith('.github.io') && seg) return `https://raw.githubusercontent.com/${h.split('.')[0]}/${seg}/aip-data/aip.json`;
+  return 'aip.json';
+}
+async function loadAip() {
+  try {
+    const r = await fetch(aipUrl() + '?t=' + Math.floor(Date.now() / 3600e3), { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if (!Array.isArray(d.routes) || !Array.isArray(d.airspaces)) throw new Error('형식 오류');
+    if (!state.aip || state.aip.generated !== d.generated) {
+      state.aip = d; store.set('nn_aip', d);
+      if (aipGroups) { buildAipLayers(); }
+      renderInfo(); render();
+    }
+  } catch (e) { console.warn('aip', e.message); }
+}
+const altLabel = (v, isUp) => !v ? '?' : v.unl ? 'UNL' : v.ft === 0 ? (isUp ? '0' : 'GND') : (v.ft >= 18000 && v.ft % 100 === 0 ? 'FL' + String(v.ft / 100).padStart(3, '0') : v.ft.toLocaleString() + 'ft' + (v.agl ? ' AGL' : ''));
+function aipPopup(a) {
+  const t = AIP_TYPES[a.type] || {};
+  return `<b>${esc(a.name)}</b><br>${esc(t.ko || a.type)} · ${esc(a.vtext || '?')}` +
+    (a.remarks ? `<br><span style="color:#555">${esc(a.remarks.slice(0, 160))}</span>` : '') +
+    (a.approx ? '<br><i>경계 근사 — AIP 원문 확인</i>' : '') +
+    `<br><span style="color:#777">eAIP ${esc(state.aip.package || '')} ${esc(a.section || '')}</span>`;
+}
+function segPopup(r, sg) {
+  const a = r.points[sg.from], b = r.points[sg.to];
+  return `<b>${esc(r.id)}</b> ${esc(r.spec || '')}<br>${esc(a.name)} → ${esc(b.name)}<br>` +
+    `${esc(sg.track || '')} ${sg.dist != null ? sg.dist + ' NM' : ''}<br>상한 ${esc(sg.upper || '?')} / 하한 ${esc(sg.lower || '?')}` +
+    (sg.mea ? `<br>최저비행고도(MEA) ${esc(sg.mea)}` : '') + `<br><span style="color:#777">eAIP ${esc(state.aip.package || '')}</span>`;
+}
+function initAipLayers() {
+  aipGroups = {};
+  const overlays = {};
+  for (const [k, t] of Object.entries(AIP_TYPES)) {
+    aipGroups[k] = L.layerGroup();
+    if (state.aipOn[k]) aipGroups[k].addTo(map);
+    overlays[`<span class="sw" style="background:${t.col}"></span>${k === 'ROUTE' ? '항로' : k + ' ' + t.ko}`] = aipGroups[k];
+  }
+  L.control.layers(null, overlays, { position: 'topright', collapsed: true }).addTo(map);
+  map.on('overlayadd overlayremove', e => {
+    for (const [k, g] of Object.entries(aipGroups)) if (g === e.layer) state.aipOn[k] = e.type === 'overlayadd';
+    store.set('nn_aipOn', state.aipOn);
+  });
+  buildAipLayers();
+}
+function buildAipLayers() {
+  if (!aipGroups) return;
+  Object.values(aipGroups).forEach(g => g.clearLayers());
+  aipShapes = {};
+  if (!state.aip) return;
+  const opt = { pane: 'aip' };
+  for (const a of state.aip.airspaces) {
+    const t = AIP_TYPES[a.type]; if (!t) continue;
+    const style = Object.assign({ color: t.col, weight: a.type === 'TMA' ? 1 : 1.8, fillOpacity: a.type === 'TMA' ? 0.02 : 0.08, dashArray: a.approx ? '6 4' : (a.type === 'TMA' ? '2 4' : null) }, opt);
+    const parts = a.geoms.map(g => g.kind === 'circle' ? L.circle(g.center, Object.assign({ radius: g.radiusNm * 1852 }, style)) : L.polygon(g.pts, style));
+    const fg = L.featureGroup(parts).bindPopup(aipPopup(a));
+    fg.addTo(aipGroups[a.type]);
+    aipShapes[a.type + '|' + a.id] = fg;
+  }
+  for (const r of state.aip.routes) {
+    const col = r.kind === 'rnav' ? '#26c6da' : '#00838f';
+    const parts = r.segs.map(sg => {
+      const a = r.points[sg.from], b = r.points[sg.to];
+      return L.polyline([[a.lat, a.lon], [b.lat, b.lon]], Object.assign({ color: col, weight: 2, opacity: .85 }, opt)).bindPopup(segPopup(r, sg));
+    });
+    const mid = r.points[Math.floor(r.points.length / 2)];
+    parts.push(L.marker([mid.lat, mid.lon], { opacity: 0, interactive: false, pane: 'aip' }).bindTooltip(r.id, { permanent: true, direction: 'center', className: 'rlabel' }));
+    const fg = L.featureGroup(parts);
+    fg.addTo(aipGroups.ROUTE);
+    aipShapes['ROUTE|' + r.id] = fg;
+  }
+}
+function renderAip(ref, af) {
+  const box = $('aipBox');
+  if (!state.aip || !ref) { box.hidden = true; return; }
+  const list = NEAR.aipConflicts(state.aip, { ref, altLo: af.lo, altHi: af.hi, terrainFt: +state.terrain || 0 });
+  const altSet = af.lo !== -Infinity || af.hi !== Infinity;
+  const inCnt = list.filter(x => x.inside && x.type !== 'TMA').length;
+  const altCnt = altSet ? list.filter(x => x.altOk === true).length : null;
+  box.hidden = false;
+  const t = `🛩 항로·고정 공역 ±${state.radius} NM: ${list.length}개` + (inCnt ? ` · <span style="color:var(--red)">겹침 ${inCnt}</span>` : '') + (altSet ? ` · 고도 겹침 ${altCnt}` : '');
+  $('aipSum').innerHTML = t; $('aipTitle').innerHTML = t;
+  if (!list.length) { $('aipList').innerHTML = '<div class="small" style="padding:6px 2px">기준 범위 안에 항로·고정 공역이 없습니다.</div>'; return; }
+  $('aipList').innerHTML = list.map((x, i) => {
+    const tp = AIP_TYPES[x.type] || {};
+    let band, extra = '';
+    if (x.kind === 'route') {
+      const sg = x.seg, a = x.item.points[sg.from], b = x.item.points[sg.to];
+      band = `${esc(sg.lower || '?')} ~ ${esc(sg.upper || '?')}${sg.mea ? ' · MEA ' + esc(sg.mea) : ''}`;
+      extra = `${esc(a.name)} → ${esc(b.name)}`;
+    } else {
+      band = esc(x.item.vtext || '?');
+      extra = esc(x.item.remarks ? x.item.remarks.slice(0, 70) : '');
+    }
+    const altTag = !altSet ? '' : x.altOk === true ? '<span class="tag" style="background:var(--red);color:#fff">고도 겹침</span>' : x.altOk === false ? '<span class="tag" style="background:var(--line);color:var(--dim)">고도 밖</span>' : '<span class="tag" style="background:var(--org)">고도 확인</span>';
+    return `<div class="aiprow${x.inside && x.type !== 'TMA' ? ' in' : ''}" onclick="focusAip('${x.type}|${esc(x.id).replace(/'/g, "\\'")}')">
+      <div><span class="tag" style="background:${tp.col}">${esc(x.type === 'ROUTE' ? '항로' : x.type)}</span>${altTag}<span class="t">${esc(x.name)}</span>${x.item.approx ? ' <span class="small">(경계 근사)</span>' : ''}<br><span class="small">${band}${extra ? ' · ' + extra : ''}</span></div>
+      <div class="r">${x.inside ? (x.kind === 'route' ? '통과' : '겹침') : x.distNm.toFixed(1) + ' NM'}</div></div>`;
+  }).join('');
+}
+function focusAip(key) {
+  const fg = aipShapes[key]; if (!fg || !map) return;
+  const type = key.split('|')[0];
+  if (!map.hasLayer(aipGroups[type])) { aipGroups[type].addTo(map); state.aipOn[type] = true; store.set('nn_aipOn', state.aipOn); }
+  $('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  map.closePopup();
+  const open = () => {
+    const first = fg.getLayers().find(l => l.getPopup && l.getPopup());
+    if (fg.getPopup()) fg.openPopup(fg.getBounds().getCenter()); else if (first) first.openPopup();
+  };
+  map.once('moveend', open);
+  map.fitBounds(fg.getBounds(), { paddingTopLeft: [20, 150], paddingBottomRight: [20, 20], maxZoom: 12, animate: false });
+  setTimeout(() => { if (!map._popup || !map.hasLayer(map._popup)) open(); }, 300);
+}
+
 async function loadData() {
   try {
     const u = dataUrl();
@@ -839,10 +986,13 @@ const onWin = () => {
 };
 $('wFrom').onchange = onWin; $('wTo').onchange = onWin;
 const onAlt = () => {
-  state.altLo = $('altLo').value.trim(); state.altHi = $('altHi').value.trim(); state.terrain = +$('terrain').value || 0;
+  const lo = $('altLo').value.trim(), hi = $('altHi').value.trim(), ter = +$('terrain').value || 0;
+  if (lo === state.altLo && hi === state.altHi && ter === state.terrain) return; // 값 변화 없으면 다시 그리지 않음
+  state.altLo = lo; state.altHi = hi; state.terrain = ter;
   store.set('nn_altLo', state.altLo); store.set('nn_altHi', state.altHi); store.set('nn_terrain', state.terrain); render();
 };
-['altLo', 'altHi', 'terrain'].forEach(id => $(id).onchange = onAlt);
+let altTimer = null;
+['altLo', 'altHi', 'terrain'].forEach(id => { $(id).onchange = onAlt; $(id).oninput = () => { clearTimeout(altTimer); altTimer = setTimeout(onAlt, 400); }; });
 $('uncheckedBtn').onclick = () => { state.onlyUnchecked = !state.onlyUnchecked; store.set('nn_unchk', state.onlyUnchecked); syncControls(); render(); };
 $('opBtn').onclick = () => { state.op = !state.op; store.set('nn_op', state.op); syncControls(); render(); };
 $('nightBtn').onclick = () => { state.night = !state.night; store.set('nn_night', state.night); syncControls(); };
@@ -872,6 +1022,7 @@ applyMapVisibility();
 render();
 locate();
 loadData();
+loadAip();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 setInterval(() => { if (!document.hidden) render(); }, 60000);
 </script>

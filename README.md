@@ -22,6 +22,12 @@
 - 본 적 있는 지도 타일은 저장 → 통신이 끊겨도 표시 (현장 가기 전 해당 지역을 한 번 둘러보세요)
 - 🔔 새 NOTAM 푸시 알림(시범, 아래 설정 필요)
 
+**항로·고정 공역 (eAIP)**
+- 지도 오른쪽 위 레이어 버튼: 항로(ENR 3.1·3.3), P/R/D(ENR 5.1), MOA(5.2), CATA(5.3), UA(5.5), TMA(2.1) 켜고 끄기
+- 기준(지점·구역·경로) ±NM 안의 항로·공역 목록: 거리, 겹침/통과, 시험 고도와의 고도 겹침(항로는 MEA~상한)
+- `.github/workflows/aip-update.yml` 이 매주 AIM Korea eAIP 현행본을 받아 `aip-data` 브랜치 `aip.json` 으로 갱신
+- 해안선·분계선·호(arc)로 정의된 경계는 직선 근사(점선 표시). CTR·ATZ 등 AD 2 공역은 미포함
+
 ## 동작 방식
 1. `.github/workflows/notam-fetch.yml` 이 15분마다 FAA NOTAM Search(키 불필요)에서
    `notam-locations.txt` 의 위치지시자(RKRR + 국내 비행장) NOTAM 원문을 받아 `notam-data` 브랜치 `notams.json` 으로 저장
