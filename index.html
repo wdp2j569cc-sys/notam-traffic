@@ -112,6 +112,7 @@ body.op .plan-only { display:none !important; }
 <header>
   <h1>내 주변 NOTAM
     <span class="tools">
+      <button id="bellBtn" title="새 NOTAM 알림">🔔</button>
       <button id="opBtn" title="수행 모드">✈︎</button>
       <button id="nightBtn" title="야간 모드">🌙</button>
     </span>
@@ -193,7 +194,7 @@ body.op .plan-only { display:none !important; }
   <details id="infoBox" class="plan-only"><summary>ℹ︎ 이 데이터에 포함되지 않는 것</summary>
     <div class="info" id="infoTxt"></div>
   </details>
-  <details id="pushBox" class="plan-only"><summary>🔔 새 NOTAM 알림 (시범)</summary>
+  <details id="pushBox"><summary>🔔 새 NOTAM 알림 (시범)</summary>
     <div class="panel info" id="pushTxt"></div>
   </details>
   <details id="pasteBox" class="plan-only"><summary>NOTAM 원문 직접 붙여넣기</summary>
@@ -209,7 +210,7 @@ body.op .plan-only { display:none !important; }
 <script src="nearby-core.js"></script>
 <script>
 'use strict';
-const APP_VER = 'v11';
+const APP_VER = 'v12';
 const VAPID_PUBLIC = 'BAD9VkAR9bCqI_1ssG26vBTq5G4qvh5gfQvUN70rpbKELZG3bid5gG3CsBB01m0A-EpKFjr7HxEpdfzb57w-xno';
 const AIM_URL = 'https://aim.koca.go.kr';
 const $ = id => document.getElementById(id);
@@ -851,6 +852,7 @@ $('baseBtn').onclick = () => {
   setBaseline(); render();
 };
 $('printBtn').onclick = printBrief;
+$('bellBtn').onclick = () => { const b = $('pushBox'); b.open = true; b.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 $('shareBtn').onclick = async () => {
   const url = shareUrl();
   try {
