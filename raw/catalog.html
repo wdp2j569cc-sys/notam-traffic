@@ -1,0 +1,3876 @@
+
+
+
+
+
+  
+<!DOCTYPE html>
+<html> 
+	<head> 
+		<title>AIM 항공정보통합관리</title>
+		 
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="title" content="항공정보통합관리" />
+<meta name="Author" content="항공정보통합관리" />
+<meta name="description" content="항공정보통합관리" />
+<meta name="keywords" content="항공정보통합관리,AIM,항공정보통합관리시스템,항공정보통합관리(AIM)" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name='viewport' content=' initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0,width=device-width'>
+<meta name="robots" content="noindex, follow">
+
+<link rel="apple-touch-icon" sizes="57x57" href="new/imageNew/favicon/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="new/imageNew/favicon/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="new/imageNew/favicon/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="new/imageNew/favicon/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="new/imageNew/favicon/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="new/imageNew/favicon/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="new/imageNew/favicon/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="new/imageNew/favicon/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="new/imageNew/favicon/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192"  href="new/imageNew/favicon/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="new/imageNew/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="new/imageNew/favicon/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="new/imageNew/favicon/favicon-16x16.png">
+<link rel="manifest" href="new/imageNew/favicon/manifest.json">
+<meta name="msapplication-TileImage" content="new/imageNew/ms-icon-144x144.png">
+ 
+<script type="text/javascript" src="new/js/jquery-2.1.1.js"></script> 
+<script type="text/javascript" src="new/js/jquery-ui-1.9.2.custom.min.js"></script> 
+<script type="text/javascript" src="new/js/aim-common.js?ver=20230512"></script>
+<script type="text/javascript" src="new/js/ui.js?ver=20221108"></script>
+<script type="text/javascript" src="new/js/plugins/slimscroll/jquery.slimscroll.min.js"></script> 
+<script type="text/javascript" src="new/js/bootstrap.js"></script>
+<script type="text/javascript" src="new/js/gnb.js?ver=3"></script>    
+<script type="text/javascript" src="new/js/aim.js?ver=202407021"></script>      
+<script type="text/javascript" src="new/js/swiper.min.js"></script> 
+ <script type="text/javascript" language="javascript" src="new/js/txtAni.js"></script>
+<script type="text/javascript" language="javascript" src="new/js/TweenMax.js"></script> 
+
+<link rel="stylesheet" type="text/css" href="new/css/aim-content.css?ver=2025" /> 
+<link rel="stylesheet" type="text/css" href="new/css/aim-default.css?ver=1" />
+<link rel="stylesheet" type="text/css" href="new/css/aim-add.css" /> 
+<link rel="stylesheet" type="text/css" href="new/css/jquery-ui-1.9.2.custom.min.css" /> 
+
+<title>항공정보통합관리</title> 
+   
+	</head>
+	<script type="text/javascript">
+		$(document).ready(function(){ 
+			var sheetSize = 5;
+		 	for(var i=0; i<sheetSize;i++){
+			 	var stdLink="#STDLink0"+i+" .table_id";
+			   $(stdLink).each(function(){
+				 	 	//if($(this).text().trim()!=''){
+							 var rows= $(stdLink+":contains('"+$(this).text()+"')");
+							 console.log($(this).text());
+							 if(rows.length>1){	  
+								rows.eq(0).attr("rowspan",rows.length);
+								rows.eq(0).parent("tr").css("border-top","2px solid black");
+								if($(this).text().trim()==''){ 
+									 $(".note").css("border-left","2px solid black");
+									 $(".note").nextAll().css("border-left","2px solid black");
+									 $(".note").css("border-right","2px solid black");
+									 $(".note").nextAll().css("border-right","2px solid black");
+									 $(".note").css("font-weight","bold");
+									$(".note").css("background","#eef1f4");
+								}
+								if($(this).text().trim()!=''){
+								    rows.eq(0).css("background","#dfe4ec");
+									var gubun = 2;
+								    if(gubun!='8' && gubun!='9' && gubun!='10'){ 
+										rows.eq(0).next().css("background","#dfe4ec");
+										rows.eq(0).next().next().css("background","#dfe4ec");
+										rows.eq(0).next().next().next().css("background","#dfe4ec"); 
+									}
+								}
+								rows.not(":eq(0)").remove();	
+							}else{
+								 rows.eq(0).css("background","#dfe4ec");
+								 rows.eq(0).parent("tr").css("border-top","2px solid black");
+							}
+				 	 	//}
+
+						 
+					});  
+			 }
+ 
+			
+		});
+		 
+	</script>
+<body> 
+ <div id="wrap">	
+<div class="contentWrap" id="contentMain">
+   <div class="subContent">  
+	<div class="noticeTab" style="margin:10px;">
+	
+	<!-- tab -->
+	<div class="mainTab STDLink">
+		<ul class="noticeTabArea">
+			 
+				<li class="active"><a href="#none" rel="STDLink00">ATS Airspace  </a></li> 
+			 
+				<li ><a href="#none" rel="STDLink01">Special Activities Airspace  </a></li> 
+			 
+				<li ><a href="#none" rel="STDLink02">Aerial Sporting Activities  </a></li> 
+			 
+				<li ><a href="#none" rel="STDLink03">Other Regulated Airspace  </a></li> 
+			 
+				<li ><a href="#none" rel="STDLink04">ATC Sectors  </a></li> 
+			
+			 
+		</ul>	 
+	</div>
+	<!-- //tab -->	
+	 
+
+	
+		
+		
+		
+		
+		
+			
+		
+	
+  				
+<table class="table_type1 tab_view" id="STDLink00" style="border-bottom:2px solid black;" >
+<caption>항공정보</caption> 
+	<colgroup> 
+		
+			
+			
+			
+			
+				<col style="width: 10%;"> 
+				<col style="width: 8%;">
+				<col style="width: 8%;"> 
+				<col style="width: 4%;">
+				<col />
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;"> 
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				
+			
+		
+		
+	</colgroup> 
+	
+	 
+  		
+  			
+  				
+  				<tr class=""><td colspan="11" class="b">Table A1-2 Airspace data &nbsp;&nbsp;&nbsp;<span><a href="/aim/catalogDown.do?gubun=2">[Excel Down]</a></span></td></tr>
+  			
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			 
+	  			 <tr class="bgb1">
+					 
+					  <th>Subject</th> 
+					  <th>Property</th> 
+					 
+						  <th>Sub-Property</th> 
+						  
+							  <th>Type</th> 
+							  <th>Description</th> 
+							  
+							  
+								  <th>Note</th> 
+								  <th>Accuracy</th> 
+								  <th>Integrity</th> 
+								  <th>Orig Type</th> 
+								  <th>Pub. Res. </th>
+								  <th>Chart Res.</th> 
+								  
+							  
+						  
+					  
+					  
+					  
+				 </tr> 
+  			   
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Airspaces of defined dimensions, alphabetically designated, within which specific types of flights may operate and for which air traffic services and rules of operation are specified.</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Type</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Type of ATS airspace according to ICAO Annex 11.</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Name</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The designator given to an airspace by a responsible authority</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Lateral limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Polygon</td> 
+						  
+						  
+						  	
+						  		<td>The surface defining the horizontal shape of the Airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>see Note 1)</td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Vertical limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Upper limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The upper limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Lower limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The lower limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>50 m</td> 
+							  <td  >routine</td> 
+							  <td  >calculated</td> 
+							  <td  >50 m or 100 ft</td>  
+							   <td >50 m or 100 ft</td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Class of airspace</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Code list</td> 
+						  
+						  
+						  	
+						  		<td>A categorisation of airspace which determines the operating rules, flight requirements, and services provided, as indicated in Annex 11, Section 2.6 and Appendix 4</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Transition altitude</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The altitude at or below which the vertical position of an aircraft is controlled by reference to altitudes. </td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Hours of applicability</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Schedule</td> 
+						  
+						  
+						  	
+						  		<td>The hours of applicability of the airspace </td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>ATS Unit </td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Unit providing service</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Name</td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The name of the unit providing the service</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Call sign</td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The call sign of the aeronautical station serving the unit</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Language</td> 
+					  
+						 
+						  <td>Code list</td> 
+						  
+						  
+						  	
+						  		<td>Information on the language(s) used, specifying area and conditions, when and where to be used, if applicable</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Applicability</td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Information on the area and conditions when to be used</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Hours of service</td> 
+					  
+						 
+						  <td>Schedule</td> 
+						  
+						  
+						  	
+						  		<td>Operational hours of the station serving the unit</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>SATVOICE number</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Value</td> 
+					  
+						 
+						  <td>Value</td> 
+						  
+						  
+						  	
+						  		<td>The SATVOICE number of the ATS aispace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS Airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Purpose</td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Indications for specific purposes of the SATVOICE number.</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Note 1)</td> 
+						  
+						  
+						  	
+						  		<td>FIR, UIR</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>2 km</td> 
+							  <td  >routine</td> 
+							  <td  >declared</td> 
+							  <td  >1 min</td>  
+							   <td >as plotted</td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>TMA, CTA</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>100 m</td> 
+							  <td  >essential</td> 
+							  <td  >calculated</td> 
+							  <td  >1 sec</td>  
+							   <td >as plotted</td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>CTR</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>100 m</td> 
+							  <td  >essential</td> 
+							  <td  >calculated</td> 
+							  <td  >1 sec</td>  
+							   <td >as plotted</td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	
+ 
+</table>
+
+	
+		
+			
+		
+		
+		
+		
+		
+	
+  				
+<table class="table_type1 tab_view" id="STDLink01" style="border-bottom:2px solid black;" >
+<caption>항공정보</caption> 
+	<colgroup> 
+		
+			
+			
+			
+			
+				<col style="width: 10%;"> 
+				<col style="width: 8%;">
+				<col style="width: 8%;"> 
+				<col style="width: 4%;">
+				<col />
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;"> 
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				
+					<col style="width: 6%;">
+				
+			
+		
+		
+	</colgroup> 
+	
+	 
+  		
+  			
+  				
+  				<tr class=""><td colspan="12" class="b">Table A1-2 Airspace data &nbsp;&nbsp;&nbsp;<span><a href="/aim/catalogDown.do?gubun=2">[Excel Down]</a></span></td></tr>
+  			
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			 
+	  			 <tr class="bgb1">
+					 
+					  <th>Subject</th> 
+					  <th>Property</th> 
+					 
+						  <th>Sub-Property</th> 
+						  
+							  <th>Type</th> 
+							  <th>Description</th> 
+							  
+							  
+								  <th>Note</th> 
+								  <th>Accuracy</th> 
+								  <th>Integrity</th> 
+								  <th>Orig Type</th> 
+								  <th>Pub. Res. </th>
+								  <th>Chart Res.</th> 
+								  
+								  	<th></th>  
+								  
+							  
+						  
+					  
+					  
+					  
+				 </tr> 
+  			   
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Type</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Code list</td> 
+						  
+						  
+						  	
+						  		<td>Type of special activity airspace (See Note 1)</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Identification</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The identification assigned to uniquely identify the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Name</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The name given to the airspace by a responsible authority</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Lateral limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Polygon</td> 
+						  
+						  
+						  	
+						  		<td>The surface defining the horizontal shape of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>See Note 2) for P,R,D Areas only</td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Vertical limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Upper limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The upper limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Lower limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The lower limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Restriction</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Type of restriction or nature of hazard</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Activation</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Information on system and means of activation announcements together with information pertinent to civil flights and applicable ADIZ procedures;</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Time of activity</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Schedule</td> 
+						  
+						  
+						  	
+						  		<td>Time interval when the special activity takes place</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Special activity airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Risk of interception</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Risk of interception in the event of penetration</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Note 1) type:</td> 
+						  
+						  
+						  	
+						  		<td>Prohibited Area</td> 
+						  	
+						  	
+						  
+						  
+							  <td>Note 2)</td> 
+							  <td>inside CTA/CTR</td> 
+							  <td  >100 m</td> 
+							  <td  >essential</td> 
+							  <td  >calculated</td>  
+							   <td >1 sec</td>  
+							  
+							  	<td  >as plotted</td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Restricted Area</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td>outside CTA/CTR</td> 
+							  <td  >2 km</td> 
+							  <td  >routine</td> 
+							  <td  >declared</td>  
+							   <td >1 min</td>  
+							  
+							  	<td  >as plotted</td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Danger Area</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Military Execise Area</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Military Training Area</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Air Defence Identification Zone (ADIZ)</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 note">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  	
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Other</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+							  	<td  ></td> 
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	
+ 
+</table>
+
+	
+		
+		
+		
+		
+		
+			
+		
+	
+  				
+<table class="table_type1 tab_view" id="STDLink02" style="border-bottom:2px solid black;" >
+<caption>항공정보</caption> 
+	<colgroup> 
+		
+			
+			
+			
+			
+				<col style="width: 10%;"> 
+				<col style="width: 8%;">
+				<col style="width: 8%;"> 
+				<col style="width: 4%;">
+				<col />
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;"> 
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				
+			
+		
+		
+	</colgroup> 
+	
+	 
+  		
+  			
+  				
+  				<tr class=""><td colspan="11" class="b">Table A1-2 Airspace data &nbsp;&nbsp;&nbsp;<span><a href="/aim/catalogDown.do?gubun=2">[Excel Down]</a></span></td></tr>
+  			
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			 
+	  			 <tr class="bgb1">
+					 
+					  <th>Subject</th> 
+					  <th>Property</th> 
+					 
+						  <th>Sub-Property</th> 
+						  
+							  <th>Type</th> 
+							  <th>Description</th> 
+							  
+							  
+								  <th>Note</th> 
+								  <th>Accuracy</th> 
+								  <th>Integrity</th> 
+								  <th>Orig Type</th> 
+								  <th>Pub. Res. </th>
+								  <th>Chart Res.</th> 
+								  
+							  
+						  
+					  
+					  
+					  
+				 </tr> 
+  			   
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  		<td>Airspace with intensive aerial sporting and recreational activities</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Type of activity</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Type of aerial sporting or recreational activity</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Designator</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The designation of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Lateral limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Polygon</td> 
+						  
+						  
+						  	
+						  		<td>The surface defining the horizontal shape of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Vertical limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Upper limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The upper limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Lower limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The lower limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Time of activity</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Schedule</td> 
+						  
+						  
+						  	
+						  		<td>Time interval when the activity takes place</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Aerial sporting activities airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Operator</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Contact details (Tel. Nr. or Frequency) of operator / user</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	
+ 
+</table>
+
+	
+		
+		
+		
+		
+		
+			
+		
+	
+  				
+<table class="table_type1 tab_view" id="STDLink03" style="border-bottom:2px solid black;" >
+<caption>항공정보</caption> 
+	<colgroup> 
+		
+			
+			
+			
+			
+				<col style="width: 10%;"> 
+				<col style="width: 8%;">
+				<col style="width: 8%;"> 
+				<col style="width: 4%;">
+				<col />
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;"> 
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				
+			
+		
+		
+	</colgroup> 
+	
+	 
+  		
+  			
+  				
+  				<tr class=""><td colspan="11" class="b">Table A1-2 Airspace data &nbsp;&nbsp;&nbsp;<span><a href="/aim/catalogDown.do?gubun=2">[Excel Down]</a></span></td></tr>
+  			
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			 
+	  			 <tr class="bgb1">
+					 
+					  <th>Subject</th> 
+					  <th>Property</th> 
+					 
+						  <th>Sub-Property</th> 
+						  
+							  <th>Type</th> 
+							  <th>Description</th> 
+							  
+							  
+								  <th>Note</th> 
+								  <th>Accuracy</th> 
+								  <th>Integrity</th> 
+								  <th>Orig Type</th> 
+								  <th>Pub. Res. </th>
+								  <th>Chart Res.</th> 
+								  
+							  
+						  
+					  
+					  
+					  
+				 </tr> 
+  			   
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Type</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Type of  airspace (RVSM, ELT etc.)</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Identification</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The identification assigned to uniquely identify the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Name</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The name given to the airspace by a responsible authority</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Lateral limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Polygon</td> 
+						  
+						  
+						  	
+						  		<td>The surface defining the horizontal shape of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Vertical limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Upper limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The upper limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Lower limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The lower limit of the airspace</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Restriction</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Type of restriction if any</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Activation</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>Information on system and means of activation announcements together with information pertinent to civil flights and applicable ADIZ procedures.</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		Other regulated airspace 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Time of activity</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Schedule</td> 
+						  
+						  
+						  	
+						  		<td>Time interval when the special activity takes place</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	
+ 
+</table>
+
+	
+		
+		
+		
+		
+		
+			
+		
+	
+  				
+<table class="table_type1 tab_view" id="STDLink04" style="border-bottom:2px solid black;" >
+<caption>항공정보</caption> 
+	<colgroup> 
+		
+			
+			
+			
+			
+				<col style="width: 10%;"> 
+				<col style="width: 8%;">
+				<col style="width: 8%;"> 
+				<col style="width: 4%;">
+				<col />
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				<col style="width: 6%;"> 
+				<col style="width: 6%;">
+				<col style="width: 6%;">
+				
+			
+		
+		
+	</colgroup> 
+	
+	 
+  		
+  			
+  				
+  				<tr class=""><td colspan="11" class="b">Table A1-2 Airspace data &nbsp;&nbsp;&nbsp;<span><a href="/aim/catalogDown.do?gubun=2">[Excel Down]</a></span></td></tr>
+  			
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			 
+	  			 <tr class="bgb1">
+					 
+					  <th>Subject</th> 
+					  <th>Property</th> 
+					 
+						  <th>Sub-Property</th> 
+						  
+							  <th>Type</th> 
+							  <th>Description</th> 
+							  
+							  
+								  <th>Note</th> 
+								  <th>Accuracy</th> 
+								  <th>Integrity</th> 
+								  <th>Orig Type</th> 
+								  <th>Pub. Res.</th>
+								  <th>Chart Res.</th> 
+								  
+							  
+						  
+					  
+					  
+					  
+				 </tr> 
+  			   
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Identification</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Text</td> 
+						  
+						  
+						  	
+						  		<td>The identification given to the sector</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Lateral limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td>Polygon</td> 
+						  
+						  
+						  	
+						  		<td>The surface defining the horizontal shape of the ATC-sector</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td>Vertical limits</td> 
+				  
+					  <td></td> 
+					  
+						 
+						  <td></td> 
+						  
+						  
+						  	
+						  	
+						  		<td>&nbsp;</td> 
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Upper limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The upper limit of the sector</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	 
+  		
+  			
+  			
+  			
+  			   
+  			
+  				
+	  			
+  				<tr class="bgb2 ">
+  				 
+				  <td class="table_id"  style="text-align:center;font-weight:bold;" >
+				  
+				  	
+				  		ATS control sector 
+				  	
+				  	
+				  
+				   </td> 
+				  <td></td> 
+				  
+					  <td>Lower limit</td> 
+					  
+						 
+						  <td>Altitude</td> 
+						  
+						  
+						  	
+						  		<td>The lower limit of the sector</td> 
+						  	
+						  	
+						  
+						  
+							  <td></td> 
+							  <td></td> 
+							  <td  ></td> 
+							  <td  ></td> 
+							  <td  ></td>  
+							   <td ></td>  
+							  
+						  
+					  
+				  
+				 </tr>
+  			
+  			  
+  			
+  		 
+		
+ 	
+ 
+</table>
+
+ 	</div>
+		</div>		</div>		</div>		 				
+</body>
+</html>
