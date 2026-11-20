@@ -39,20 +39,24 @@ export function buildMessage(target, prevRaws, curRaws, now = Date.now()) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [prevFile, curFile] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const testMode = args.includes('--test');
+  const [prevFile, curFile] = args.filter(a => a !== '--test');
   const raw = process.env.PUSH_TARGETS, priv = process.env.VAPID_PRIVATE_KEY;
   if (!raw || !priv) { console.log('PUSH_TARGETS 또는 VAPID_PRIVATE_KEY가 없어 알림을 건너뜁니다.'); process.exit(0); }
-  if (!prevFile || !existsSync(prevFile)) { console.log('직전 수집본이 없어 비교를 건너뜁니다(첫 실행).'); process.exit(0); }
+  if (!testMode && (!prevFile || !existsSync(prevFile))) { console.log('직전 수집본이 없어 비교를 건너뜁니다(첫 실행).'); process.exit(0); }
   let targets;
   try { targets = JSON.parse(raw); } catch (e) { console.error('PUSH_TARGETS JSON 형식 오류:', e.message); process.exit(1); }
   if (!Array.isArray(targets)) targets = [targets];
-  const prev = JSON.parse(readFileSync(prevFile, 'utf8')).notams || [];
+  const prev = testMode ? [] : JSON.parse(readFileSync(prevFile, 'utf8')).notams || [];
   const cur = JSON.parse(readFileSync(curFile, 'utf8')).notams || [];
   const webpush = require('web-push');
   webpush.setVapidDetails('https://github.com/notam-traffic', VAPID_PUBLIC, priv);
   let sent = 0;
   for (const [i, t] of targets.entries()) {
-    const msg = buildMessage(t, prev, cur);
+    const msg = testMode
+      ? { title: '🔔 NOTAM 알림 시험', body: `알림 설정이 정상입니다. 감시 대상: ${(t.refs || []).map(r => r.name).join(', ') || '없음'}`, tag: 'notam-test' }
+      : buildMessage(t, prev, cur);
     if (!msg) { console.log(`대상 ${i + 1}: 새 NOTAM 없음`); continue; }
     try {
       await webpush.sendNotification(t.sub, JSON.stringify(msg), { TTL: 6 * 3600, urgency: 'high' });

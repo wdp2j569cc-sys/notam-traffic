@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '2,17,32,47 * * * *'   # 15분마다 (GitHub 사정으로 몇 분~수십 분 늦을 수 있음)
   workflow_dispatch:                # Actions 탭에서 수동 실행
+    inputs:
+      test_push:
+        description: '시험 알림 보내기 (등록된 모든 기기에)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -44,4 +49,5 @@ jobs:
         run: |
           if [ -z "$PUSH_TARGETS" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then echo "알림 설정 없음 — 건너뜀"; exit 0; fi
           npm i --no-save --no-audit --no-fund web-push@3 >/dev/null
+          if [ "${{ inputs.test_push }}" = "true" ]; then node scripts/notify.mjs --test /tmp/prev.json /tmp/notams.json; fi
           node scripts/notify.mjs /tmp/prev.json /tmp/notams.json
