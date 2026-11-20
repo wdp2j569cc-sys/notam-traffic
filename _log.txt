@@ -1,0 +1,23 @@
+200 56466B https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/history-en-GB.html
+403 318B https://aim.koca.go.kr/eaipPub/Package/ -> https://aim.koca.go.kr/eaipPub/Package/
+200 101B https://aim.koca.go.kr/eaipPub/ -> https://aim.koca.go.kr/eaipPub/
+404 315B https://aim.koca.go.kr/eaipPub/Package/index.html -> https://aim.koca.go.kr/eaipPub/Package/index.html
+200 61573B https://aim.koca.go.kr/aim/viewCatalog.do?gubun=2 -> https://aim.koca.go.kr/aim/viewCatalog.do?gubun=2
+package dates found: 2026-05-28 2026-06-10-AIRAC 2026-06-25 2026-07-08-AIRAC 2026-07-23 2026-08-05-AIRAC 2026-08-20 2026-09-02-AIRAC 2026-09-17 2026-09-30-AIRAC 2026-10-15 2026-10-28-AIRAC 2026-11-12 2026-11-25-AIRAC 2026-12-23-AIRAC
+200 250365B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.1-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.1-en-GB.html
+using package: 2026-11-12
+200 206263B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-2.1-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-2.1-en-GB.html
+200 39874B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-2.2-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-2.2-en-GB.html
+200 250365B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.1-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.1-en-GB.html
+200 2596B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.2-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.2-en-GB.html
+200 416378B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.3-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.3-en-GB.html
+200 16215B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.5-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-3.5-en-GB.html
+200 17851B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-4.1-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-4.1-en-GB.html
+200 271261B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-4.4-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-4.4-en-GB.html
+200 205090B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.1-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.1-en-GB.html
+200 99188B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.2-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.2-en-GB.html
+200 23284B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.3-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.3-en-GB.html
+200 46032B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.5-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.5-en-GB.html
+200 8938B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.6-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-ENR-5.6-en-GB.html
+200 2044B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/index-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/index-en-GB.html
+200 201975B https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-menu-en-GB.html -> https://aim.koca.go.kr/eaipPub/Package/2026-11-12/html/eAIP/KR-menu-en-GB.html

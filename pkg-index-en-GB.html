@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=UTF-8"></meta>
+		<title>eAIS Package for Republic of Korea Specimen</title>
+		<script src="menu.js" type="text/javascript"><!--This comment prevents a bug in IE6--></script>
+		<script src="amendments.js" type="text/javascript"><!--This comment prevents a bug in IE6--></script>
+		<script src="commands.js" type="text/javascript"><!--This comment prevents a bug in IE6--></script>
+		<script src="search/mark.js" charset="UTF-8"></script>
+		<script type="text/javascript">
+			function setContentHighlight(eAISContent){ // Highlight Apply
+				var url = eAISContent.contentWindow.location.href;
+				if(url.indexOf("searchMode")==-1);
+				else{
+					var markInstance = new Mark(document.getElementsByName("eAISContent")[0].contentWindow.document.querySelector("body"));
+
+					var keyword = document.getElementsByName("eAISNavigationBase")[0].contentWindow.document.getElementsByName("eAISNavigation")[0].contentWindow.document.getElementsByName("eAISSearch")[0].contentWindow.document.getElementsByName("keyWord")[0].value;
+
+					var options = {separateWordSearch:true, diacritics:true};
+
+					markInstance.unmark().mark(keyword, options);
+
+					document.getElementsByName("eAISContent")[0].contentWindow.window.scroll(0, getOffsetTop(document.getElementsByName("eAISContent")[0].contentWindow.document.getElementsByTagName("mark")[0]));
+				}
+			}
+
+			function getOffsetTop(el) {
+				var top = 0;
+				if (el.offsetParent) {
+					do {
+						top += el.offsetTop;
+					} while (el = el.offsetParent);
+					return [top-70];
+				}
+			}
+		
+		</script>
+	</head>
+	<frameset cols="300,*" onload="openTarget()">
+		<frame name="eAISNavigationBase" src="toc-frameset-en-GB.html"/>
+		<frame name="eAISContent" src="KR-cover-en-GB.html" onload="setContentHighlight(this)"/>
+	</frameset>
+</html>
