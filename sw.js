@@ -1,9 +1,9 @@
 // 앱 셸 캐시 + 지도 타일 캐시 + 푸시 알림
-const CACHE = 'notam-traffic-v13';
+const CACHE = 'notam-traffic-v14';
 const TILES = 'notam-tiles-v1';
 const TILE_MAX = 3000; // 저장할 최대 타일 수 (약 50~60MB 이내)
 const SHELL = [
-  './', './index.html', './full.html', './notam.js', './nearby-core.js', './manifest.webmanifest', './icon.svg', './icon-180.png',
+  './', './index.html', './full.html', './notam.js', './nearby-core.js', './lock.js', './app.js', './manifest.webmanifest', './icon.svg', './icon-180.png',
   './vendor/leaflet/leaflet.css', './vendor/leaflet/leaflet.js'
 ];
 
